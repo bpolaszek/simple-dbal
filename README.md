@@ -11,6 +11,20 @@ PHP offers 2 different APIs to connect to a SQL database: `PDO` and `mysqli` (we
 
 This library exposes an API that can be used by any of them, transparently. Which means you may change from `PDO` to `mysqli` and vice-versa without having to rewrite your whole code.
 
+Overview:
+
+```php
+use BenTools\SimpleDBAL\Model\Credentials;
+use BenTools\SimpleDBAL\Model\SimpleDBAL;
+
+$credentials = new Credentials('localhost', 'user', 'password', 'database');
+$cnx         = SimpleDBAL::factory($credentials, SimpleDBAL::PDO);
+$query       = "SELECT `id`, `name` FROM guys WHERE created_at > ?";
+foreach ($cnx->execute($query, [new DateTime('-1 month')]) as $item) {
+    var_dump($item['name']);
+}
+```
+
 Additionnal features
 --------------------
 * Parameter binding on the fly for prepared statements
