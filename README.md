@@ -20,9 +20,9 @@ Additionnal features
 * Named parameters for prepared statements in `mysqli` (portage with regexps - experimental feature)
 * Can silently reconnect after a lost connection
 
-The `Result` class
+The `Result` object
 ------------------
-Every query sent to the adapter must return a `BenTools\SimpleDBAL\Contract\ResultInterface` class.
+Every query sent to the adapter must return a `BenTools\SimpleDBAL\Contract\ResultInterface` object.
 
 For _SELECT_ queries, use the following methods:
 * `$result->asArray()` to fetch an array containing the whole resultset
