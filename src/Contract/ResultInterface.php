@@ -2,7 +2,10 @@
 
 namespace BenTools\SimpleDBAL\Contract;
 
-interface ResultInterface
+use Countable;
+use Traversable;
+
+interface ResultInterface extends Countable, Traversable
 {
     /**
      * Return the whole resultset.

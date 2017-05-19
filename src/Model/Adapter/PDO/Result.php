@@ -4,10 +4,11 @@ namespace BenTools\SimpleDBAL\Model\Adapter\PDO;
 
 use BenTools\SimpleDBAL\Contract\ResultInterface;
 use BenTools\SimpleDBAL\Model\Exception\DBALException;
+use IteratorAggregate;
 use PDO;
 use PDOStatement;
 
-class Result implements \IteratorAggregate, ResultInterface, \Countable
+class Result implements IteratorAggregate, ResultInterface
 {
     /**
      * @var PDO
@@ -63,10 +64,8 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             $this->stmt->execute();
         }
         if (empty($this->storage['array'])) {
-
-
             if ($this->shouldResetResultset()) {
-                $this->stmt->execute();
+                $this->resetResultset();
             }
 
             $this->storage['array'] = $this->stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -86,9 +85,8 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             if (isset($this->storage['array'][0])) {
                 $this->storage['row'] = &$this->storage['array'][0];
             } else {
-
                 if ($this->shouldResetResultset()) {
-                    $this->stmt->execute();
+                    $this->resetResultset();
                 }
 
                 $this->storage['row'] = $this->stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -109,9 +107,8 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             if (!empty($this->storage['array'])) {
                 $this->storage['list'] = array_column($this->storage['array'], array_keys($this->storage['array'][0])[0]);
             } else {
-
                 if ($this->shouldResetResultset()) {
-                    $this->stmt->execute();
+                    $this->resetResultset();
                 }
 
                 $generator = function (\PDOStatement $stmt) {
@@ -141,9 +138,8 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             } elseif (!empty($this->storage['array'])) {
                 $this->storage['value'] = array_values($this->storage['array'][0])[0];
             } else {
-
                 if ($this->shouldResetResultset()) {
-                    $this->stmt->execute();
+                    $this->resetResultset();
                 }
 
                 $this->storage['value'] = $this->stmt->fetchColumn(0) ?: null;
@@ -168,11 +164,10 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
                 yield $key => $value;
             }
         } else {
-
             $wrappedStmt = $this->stmt;
 
             if ($this->shouldResetResultset()) {
-                $this->stmt->execute();
+                $this->resetResultset();
             }
 
             while ($row = $wrappedStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -194,5 +189,13 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
     private function shouldResetResultset(): bool
     {
         return !empty($this->storage['row']) || !empty($this->storage['value']) || !empty($this->storage['list']) || !empty($this->storage['yield']);
+    }
+
+    /**
+     * Reset the resultset.
+     */
+    private function resetResultset()
+    {
+        $this->stmt->execute();
     }
 }

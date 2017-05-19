@@ -4,15 +4,22 @@ namespace BenTools\SimpleDBAL\Model\Adapter\Mysqli;
 
 use BenTools\SimpleDBAL\Contract\ResultInterface;
 use BenTools\SimpleDBAL\Model\Exception\DBALException;
+use IteratorAggregate;
 use mysqli;
 use mysqli_result;
+use mysqli_stmt;
 
-class Result implements ResultInterface
+class Result implements IteratorAggregate, ResultInterface
 {
     /**
      * @var mysqli
      */
     private $mysqli;
+
+    /**
+     * @var mysqli_stmt
+     */
+    private $stmt;
 
     /**
      * @var mysqli_result
@@ -24,12 +31,30 @@ class Result implements ResultInterface
     /**
      * Result constructor.
      * @param mysqli $mysqli
+     * @param mysqli_stmt $stmt
      * @param mysqli_result $result
      */
-    public function __construct(mysqli $mysqli, mysqli_result $result = null)
+    public function __construct(mysqli $mysqli, mysqli_result $result = null, mysqli_stmt $stmt = null)
     {
         $this->mysqli = $mysqli;
+        $this->stmt = $stmt;
         $this->result = $result;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLastInsertId()
+    {
+        return $this->mysqli->insert_id;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function count()
+    {
+        return null === $this->result ? $this->mysqli->affected_rows : $this->result->num_rows;
     }
 
     /**
@@ -41,6 +66,10 @@ class Result implements ResultInterface
             throw new DBALException("No mysqli_result object provided.");
         }
         if (empty($this->storage['array'])) {
+            if ($this->shouldResetResultset()) {
+                $this->resetResultset();
+            }
+
             $this->storage['array'] = $this->result->fetch_all(MYSQLI_ASSOC);
         }
         return $this->storage['array'];
@@ -58,6 +87,10 @@ class Result implements ResultInterface
             if (isset($this->storage['array'][0])) {
                 $this->storage['row'] = &$this->storage['array'][0];
             } else {
+                if ($this->shouldResetResultset()) {
+                    $this->resetResultset();
+                }
+
                 $this->storage['row'] = $this->result->fetch_array(MYSQLI_ASSOC) ?: null;
             }
         }
@@ -76,6 +109,10 @@ class Result implements ResultInterface
             if (!empty($this->storage['array'])) {
                 $this->storage['list'] = array_column($this->storage['array'], array_keys($this->storage['array'][0])[0]);
             } else {
+                if ($this->shouldResetResultset()) {
+                    $this->resetResultset();
+                }
+
                 $generator = function (\mysqli_result $result) {
                     while ($row = $result->fetch_array(MYSQLI_NUM)) {
                         yield $row[0];
@@ -103,6 +140,10 @@ class Result implements ResultInterface
             } elseif (!empty($this->storage['array'])) {
                 $this->storage['value'] = array_values($this->storage['array'][0])[0];
             } else {
+                if ($this->shouldResetResultset()) {
+                    $this->resetResultset();
+                }
+
                 $row                    = $this->result->fetch_array(MYSQLI_NUM);
                 $this->storage['value'] = $row ? $row[0] : null;
             }
@@ -123,28 +164,41 @@ class Result implements ResultInterface
                 yield $key => $value;
             }
         } else {
-            $storage = [];
+            if ($this->shouldResetResultset()) {
+                $this->resetResultset();
+            }
+
             while ($row = $this->result->fetch_array(MYSQLI_ASSOC)) {
-                $storage[] = $row;
+                if (empty($this->storage['yield'])) {
+                    $this->storage['yield'] = true;
+                }
                 yield $row;
             }
-            $this->storage['array'] = $storage;
         }
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getLastInsertId()
-    {
-        return $this->mysqli->insert_id;
-    }
 
     /**
-     * @inheritDoc
+     * If asRow(), asList() or asValue() was called earlier, the iterator may be incomplete.
+     * In such case we need to rewind the iterator by executing the statement a second time.
+     * You should avoid to call getIterator() and asRow(), etc. with the same resultset.
+     *
+     * @return bool
      */
-    public function count()
+    private function shouldResetResultset(): bool
     {
-        return null === $this->result ? $this->mysqli->affected_rows : $this->result->num_rows;
+        return !empty($this->storage['row']) || !empty($this->storage['value']) || !empty($this->storage['list']) || !empty($this->storage['yield']);
+    }
+
+
+    /**
+     * Reset the resultset.
+     */
+    private function resetResultset()
+    {
+        if (null !== $this->stmt) {
+            $this->stmt->execute();
+            $this->result = $this->stmt->get_result();
+        }
     }
 }
