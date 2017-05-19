@@ -51,7 +51,9 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
             $this->cnx->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }
         $this->credentials = $credentials;
-        $this->options = $options;
+        if (null !== $options) {
+            $this->options     = array_replace($this->getDefaultOptions(), $options);
+        }
     }
 
     /**

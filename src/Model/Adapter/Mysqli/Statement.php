@@ -8,6 +8,7 @@ use BenTools\SimpleDBAL\Contract\StatementInterface;
 use BenTools\SimpleDBAL\Model\Exception\ParamBindingException;
 use BenTools\SimpleDBAL\Model\StatementTrait;
 use mysqli_result;
+use mysqli_stmt;
 
 class Statement implements StatementInterface
 {
@@ -17,32 +18,32 @@ class Statement implements StatementInterface
     /**
      * @var MysqliAdapter
      */
-    private $connection;
+    protected $connection;
 
     /**
-     * @var \mysqli_stmt
+     * @var mysqli_stmt
      */
-    private $stmt;
-
-    /**
-     * @var string
-     */
-    private $queryString;
+    protected $stmt;
 
     /**
      * @var string
      */
-    private $runnableQueryString;
+    protected $queryString;
+
+    /**
+     * @var string
+     */
+    protected $runnableQueryString;
 
     /**
      * MysqliStatement constructor.
      * @param MysqliAdapter $connection
-     * @param \mysqli_stmt $stmt
+     * @param mysqli_stmt $stmt
      * @param array $values
      * @param string $queryString
      * @param string $runnableQueryString
      */
-    public function __construct(MysqliAdapter $connection, \mysqli_stmt $stmt, array $values = null, string $queryString, string $runnableQueryString = null)
+    public function __construct(MysqliAdapter $connection, mysqli_stmt $stmt, array $values = null, string $queryString, string $runnableQueryString = null)
     {
         $this->connection          = $connection;
         $this->stmt                = $stmt;
@@ -52,7 +53,7 @@ class Statement implements StatementInterface
     }
 
     /**
-     * @inheritDoc
+     * @return MysqliAdapter
      */
     final public function getConnection(): AdapterInterface
     {
@@ -81,7 +82,7 @@ class Statement implements StatementInterface
     public function bind(): void
     {
         if ($this->hasValues()) {
-            if ($this->hasNamedPlaceholders() && $this->connection->shouldResolveNamedParameters()) {
+            if ($this->hasNamedPlaceholders() && true === $this->getConnection()->getOption(MysqliAdapter::OPT_RESOLVE_NAMED_PARAMS)) {
                 $values = $this->resolveValues();
             } else {
                 $values = $this->values;

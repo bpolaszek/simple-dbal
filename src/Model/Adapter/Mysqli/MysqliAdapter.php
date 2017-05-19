@@ -13,6 +13,7 @@ use BenTools\SimpleDBAL\Model\Exception\AccessDeniedException;
 use BenTools\SimpleDBAL\Model\Exception\DBALException;
 use BenTools\SimpleDBAL\Model\Exception\MaxConnectAttempsException;
 use BenTools\SimpleDBAL\Model\Exception\ParamBindingException;
+use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
 use mysqli;
 use mysqli_result;
@@ -24,7 +25,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
 
     use ConfigurableTrait;
 
-    const OPT_RESOLVE_NAMED_PARAMS   = 'resolve_named_params';
+    const OPT_RESOLVE_NAMED_PARAMS        = 'resolve_named_params';
+    const OPT_ENABLE_PARALLEL_QUERIES     = 'enable_parallel_queries';
+    const OPT_EMULATE_PREPARED_STATEMENTS = 'emulate_prepared_statements';
 
     /**
      * @var mysqli
@@ -52,7 +55,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         $this->cnx         = $cnx;
         $this->credentials = $credentials;
-        $this->options     = $options;
+        if (null !== $options) {
+            $this->options     = array_replace($this->getDefaultOptions(), $options);
+        }
     }
 
     /**
@@ -107,14 +112,6 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     }
 
     /**
-     * @return bool
-     */
-    public function shouldResolveNamedParameters(): bool
-    {
-        return (bool) $this->getOption(self::OPT_RESOLVE_NAMED_PARAMS);
-    }
-
-    /**
      * @param string $queryString
      * @return bool
      */
@@ -128,11 +125,17 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
      */
     public function prepare(string $queryString, array $values = null): StatementInterface
     {
-        if ($this->shouldResolveNamedParameters() && $this->hasNamedParameters($queryString)) {
+
+        if (true === $this->getOption(self::OPT_EMULATE_PREPARED_STATEMENTS)) {
+            return $this->emulatePrepare($queryString, $values);
+        }
+
+        if (true === $this->getOption(self::OPT_RESOLVE_NAMED_PARAMS) && $this->hasNamedParameters($queryString)) {
             $runnableQueryString = $this->convertToRunnableQuery($queryString);
         } else {
             $runnableQueryString = &$queryString;
         }
+
         try {
             $wrappedStmt = self::wrapWithErrorHandler(function () use ($runnableQueryString) {
                 return $this->cnx->prepare($runnableQueryString);
@@ -145,6 +148,16 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
             throw new DBALException($e->getMessage(), (int) $e->getCode(), $e);
         }
         return new Statement($this, $wrappedStmt, $values, $queryString, $runnableQueryString);
+    }
+
+    /**
+     * @param string $queryString
+     * @param array|null $values
+     * @return EmulatedStatement
+     */
+    private function emulatePrepare(string $queryString, array $values = null): EmulatedStatement
+    {
+        return new EmulatedStatement($this, $values, $queryString);
     }
 
     /**
@@ -179,6 +192,26 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     }
 
     /**
+     * @inheritdoc
+     */
+    public function executeAsync($stmt, array $values = null): PromiseInterface
+    {
+
+        if (true === $this->getOption(self::OPT_ENABLE_PARALLEL_QUERIES)) {
+            return $this->executeParallel($stmt, $values);
+        }
+
+        $promise = new Promise(function () use (&$promise, $stmt, $values) {
+            try {
+                $promise->resolve($this->execute($stmt, $values));
+            } catch (Throwable $e) {
+                $promise->reject($e);
+            }
+        });
+        return $promise;
+    }
+
+    /**
      * EXPERIMENTAL ! Executes a statement asynchronously.
      * The promise will return a Result object.
      *
@@ -186,35 +219,38 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
      * @param array|null $values
      * @return PromiseInterface
      */
-    public function executeAsync($stmt, array $values = null): PromiseInterface
+    private function executeParallel($stmt, array $values = null): PromiseInterface
     {
         if (is_string($stmt)) {
-            $stmt = $this->prepare($stmt, $values);
+            $stmt = $this->emulatePrepare((string) $stmt, $values);
         } else {
             if (!$stmt instanceof Statement) {
                 throw new \InvalidArgumentException(sprintf('Expected %s object, got %s', Statement::class, get_class($stmt)));
             }
-            if (null !== $values) {
+            if (!$stmt instanceof EmulatedStatement) {
+                $stmt = $this->emulatePrepare((string) $stmt, $values ?? $stmt->getValues());
+            } elseif (null !== $values) {
                 $stmt = $stmt->withValues($values);
             }
         }
 
-        // Simulate query string (Mysqli Asynchronous queries do not support prepared statements)
-        $simulatedQueryString = $stmt->preview();
+        $stmt->bind();
 
-        // Clone connection if necessary (Mysqli Asynchronous queries require a different connection to work properly)
-        $credentials = $this->getCredentials();
         try {
-            $cnx = new mysqli($credentials->getHostname(), $credentials->getUser(), $credentials->getPassword(), $credentials->getDatabase(), $credentials->getPort());
+            // Clone connection (Mysqli Asynchronous queries require a different connection to work properly)
+            $credentials = $this->getCredentials();
+            $cnx         = new mysqli($credentials->getHostname(), $credentials->getUser(), $credentials->getPassword(), $credentials->getDatabase(), $credentials->getPort());
         } catch (mysqli_sql_exception $e) {
             throw new AccessDeniedException($e->getMessage(), (int) $e->getCode(), $e);
         }
-        $promise = MysqliAsync::query($simulatedQueryString, $cnx)->then(function ($result) use ($cnx, $stmt) {
+
+        $promise = MysqliAsync::query($stmt->getRunnableQuery(), $cnx)->then(function ($result) use ($cnx, $stmt) {
             if (!$result instanceof mysqli_result) {
                 $result = null;
             }
             return new Result($cnx, $result);
         });
+
         return $promise;
     }
 
@@ -280,9 +316,11 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     public function getDefaultOptions(): array
     {
         return [
-            self::OPT_MAX_RECONNECT_ATTEMPTS => self::DEFAULT_MAX_RECONNECT_ATTEMPTS,
-            self::OPT_USLEEP_AFTER_FIRST_ATTEMPT => self::DEFAULT_USLEEP_AFTER_FIRST_ATTEMPT,
-            self::OPT_RESOLVE_NAMED_PARAMS   => true,
+            self::OPT_MAX_RECONNECT_ATTEMPTS      => self::DEFAULT_MAX_RECONNECT_ATTEMPTS,
+            self::OPT_USLEEP_AFTER_FIRST_ATTEMPT  => self::DEFAULT_USLEEP_AFTER_FIRST_ATTEMPT,
+            self::OPT_RESOLVE_NAMED_PARAMS        => false,
+            self::OPT_EMULATE_PREPARED_STATEMENTS => false,
+            self::OPT_ENABLE_PARALLEL_QUERIES     => false,
         ];
     }
 

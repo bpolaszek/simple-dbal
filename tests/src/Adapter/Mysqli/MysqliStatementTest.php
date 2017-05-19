@@ -3,6 +3,7 @@
 namespace BenTools\SimpleDBAL\Tests\Adapter\Mysqli;
 
 use BenTools\SimpleDBAL\Contract\ResultInterface;
+use BenTools\SimpleDBAL\Model\Adapter\Mysqli\MysqliAdapter;
 use BenTools\SimpleDBAL\Model\Adapter\Mysqli\Statement;
 use BenTools\SimpleDBAL\Model\Adapter\Mysqli\Result;
 
@@ -12,6 +13,7 @@ class MysqliStatementTest extends MysqliTestCase
     public static function setUpBeforeClass()
     {
         self::initConnection();
+        self::$cnx->setOption(MysqliAdapter::OPT_RESOLVE_NAMED_PARAMS, true);
     }
 
     public function testPreparedWriteStmt()
