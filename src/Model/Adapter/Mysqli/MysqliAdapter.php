@@ -209,7 +209,10 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         } catch (mysqli_sql_exception $e) {
             throw new AccessDeniedException($e->getMessage(), (int) $e->getCode(), $e);
         }
-        $promise = MysqliAsync::query($simulatedQueryString, $cnx)->then(function (mysqli_result $result) use ($cnx) {
+        $promise = MysqliAsync::query($simulatedQueryString, $cnx)->then(function ($result) use ($cnx, $stmt) {
+            if (!$result instanceof mysqli_result) {
+                $result = null;
+            }
             return new Result($cnx, $result);
         });
         return $promise;

@@ -124,3 +124,5 @@ var_dump($result->asValue());
 ```php
 string(4) "John"
 ```
+
+Next: [Configuration](02-Configuration.md)

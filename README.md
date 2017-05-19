@@ -65,10 +65,12 @@ Tests
 Documentation
 -----
 
-[Getting started](doc/GettingStarted.md)
+[Getting started](doc/01-GettingStarted.md)
 
-[Configuring auto-reconnect](doc/Configuration.md)
+[Configuring auto-reconnect](doc/02-Configuration.md)
 
-[Asynchronous and parallel queries](doc/AsynchronousQueries.md)
+[Asynchronous and parallel queries](doc/03-AsynchronousQueries.md)
 
-[Connection pools](doc/ConnectionPools.md)
+[Connection pools](doc/04-ConnectionPools.md)
+
+[Known Issues](doc/05-KnownIssues.md)
