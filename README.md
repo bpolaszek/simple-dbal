@@ -29,8 +29,8 @@ Additionnal features
 --------------------
 * Parameter binding on the fly for prepared statements
 * `DateTimeInterface` objects automatic binding (formats to YYYY-MM-DD HH:ii:ss)
-* Asynchronous queries (Promises)
-* Parallel queries (only supported by the `mysqli` adapter - the `pdo` adapter continues to send queries one after the other)
+* [Asynchronous queries](doc/03-AsynchronousQueries.md) (Promises)
+* [Parallel queries](doc/03-AsynchronousQueries.md#parallel-queries)
 * Named parameters for prepared statements in `mysqli` (portage with regexps - experimental feature)
 * Can silently reconnect after a lost connection
 
