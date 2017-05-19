@@ -238,6 +238,8 @@ class Statement implements StatementInterface
      */
     public function createResult(): ResultInterface
     {
+        $this->bind();
+        $this->getWrappedStatement()->execute();
         $result = $this->getWrappedStatement()->get_result();
         $mysqli = $this->getConnection()->getWrappedConnection();
         return !$result instanceof mysqli_result ? new Result($mysqli) : new Result($mysqli, $result, $this->getWrappedStatement());

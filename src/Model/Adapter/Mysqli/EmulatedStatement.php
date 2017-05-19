@@ -2,6 +2,8 @@
 
 namespace BenTools\SimpleDBAL\Model\Adapter\Mysqli;
 
+use BenTools\SimpleDBAL\Contract\ResultInterface;
+
 class EmulatedStatement extends Statement
 {
     /**
@@ -39,5 +41,15 @@ class EmulatedStatement extends Statement
             throw new \RuntimeException("Unbound query, run bind() before.");
         }
         return $this->runnableQueryString;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createResult(): ResultInterface
+    {
+        $this->bind();
+        $mysqliResult = $this->getConnection()->getWrappedConnection()->query($this->getRunnableQuery());
+        return new Result($this->getConnection()->getWrappedConnection(), $mysqliResult instanceof \mysqli_result ? $mysqliResult : null);
     }
 }

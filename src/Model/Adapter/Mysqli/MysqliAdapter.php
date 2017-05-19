@@ -179,8 +179,8 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         }
 
         try {
-            $this->runStmt($stmt);
-            $result = $stmt->createResult();
+            $result = $this->runStmt($stmt);
+            return $result;
         } catch (Throwable $e) {
             if (!$this->isConnected()) {
                 $this->reconnect();
@@ -188,7 +188,6 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
             }
             throw $e;
         }
-        return $result;
     }
 
     /**
@@ -233,9 +232,6 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
                 $stmt = $stmt->withValues($values);
             }
         }
-
-        $stmt->bind();
-
         try {
             // Clone connection (Mysqli Asynchronous queries require a different connection to work properly)
             $credentials = $this->getCredentials();
@@ -244,6 +240,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
             throw new AccessDeniedException($e->getMessage(), (int) $e->getCode(), $e);
         }
 
+        $stmt->bind();
         $promise = MysqliAsync::query($stmt->getRunnableQuery(), $cnx)->then(function ($result) use ($cnx, $stmt) {
             if (!$result instanceof mysqli_result) {
                 $result = null;
@@ -256,11 +253,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
 
     private function runStmt(Statement $stmt)
     {
-        $wrappedStmt = $stmt->getWrappedStatement();
         try {
-            self::wrapWithErrorHandler(function () use ($stmt, $wrappedStmt) {
-                $stmt->bind();
-                $wrappedStmt->execute();
+            return self::wrapWithErrorHandler(function () use ($stmt) {
+                return $stmt->createResult();
             });
         } catch (mysqli_sql_exception $e) {
             if (false !== strpos($e->getMessage(), 'No data supplied for parameters in prepared statement')) {
