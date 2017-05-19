@@ -59,8 +59,17 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
         if (null === $this->stmt) {
             throw new DBALException("No \PDOStatement object provided.");
         }
+        if (!empty($this->storage['row']) || !empty($this->storage['value']) || !empty($this->storage['list']) || !empty($this->storage['yield'])) {
+            $this->stmt->execute();
+        }
         if (empty($this->storage['array'])) {
-            $this->storage['array'] = array_merge($this->storage['tmp'] ?? [], iterator_to_array($this)) ?: [];
+
+
+            if ($this->shouldResetResultset()) {
+                $this->stmt->execute();
+            }
+
+            $this->storage['array'] = $this->stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         return $this->storage['array'];
     }
@@ -77,6 +86,11 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             if (isset($this->storage['array'][0])) {
                 $this->storage['row'] = &$this->storage['array'][0];
             } else {
+
+                if ($this->shouldResetResultset()) {
+                    $this->stmt->execute();
+                }
+
                 $this->storage['row'] = $this->stmt->fetch(PDO::FETCH_ASSOC) ?: null;
             }
         }
@@ -95,6 +109,11 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             if (!empty($this->storage['array'])) {
                 $this->storage['list'] = array_column($this->storage['array'], array_keys($this->storage['array'][0])[0]);
             } else {
+
+                if ($this->shouldResetResultset()) {
+                    $this->stmt->execute();
+                }
+
                 $generator = function (\PDOStatement $stmt) {
                     while ($value = $stmt->fetchColumn(0)) {
                         yield $value;
@@ -122,6 +141,11 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
             } elseif (!empty($this->storage['array'])) {
                 $this->storage['value'] = array_values($this->storage['array'][0])[0];
             } else {
+
+                if ($this->shouldResetResultset()) {
+                    $this->stmt->execute();
+                }
+
                 $this->storage['value'] = $this->stmt->fetchColumn(0) ?: null;
             }
         }
@@ -137,19 +161,38 @@ class Result implements \IteratorAggregate, ResultInterface, \Countable
         if (null === $this->stmt) {
             throw new DBALException("No \PDOStatement object provided.");
         }
+
+        // If asArray() was called earlier, iterate over the stored resultset.
         if (!empty($this->storage['array'])) {
             foreach ($this->storage['array'] as $key => $value) {
                 yield $key => $value;
             }
         } else {
+
             $wrappedStmt = $this->stmt;
-            $this->storage['tmp'] = [];
+
+            if ($this->shouldResetResultset()) {
+                $this->stmt->execute();
+            }
+
             while ($row = $wrappedStmt->fetch(PDO::FETCH_ASSOC)) {
-                $this->storage['tmp'][] = $row;
+                if (empty($this->storage['yield'])) {
+                    $this->storage['yield'] = true;
+                }
                 yield $row;
             }
-            $this->storage['array'] = $this->storage['tmp'];
-            $this->storage['tmp'] = [];
         }
+    }
+
+    /**
+     * If asRow(), asList() or asValue() was called earlier, the iterator may be incomplete.
+     * In such case we need to rewind the iterator by executing the statement a second time.
+     * You should avoid to call getIterator() and asRow(), etc. with the same resultset.
+     *
+     * @return bool
+     */
+    private function shouldResetResultset(): bool
+    {
+        return !empty($this->storage['row']) || !empty($this->storage['value']) || !empty($this->storage['list']) || !empty($this->storage['yield']);
     }
 }
