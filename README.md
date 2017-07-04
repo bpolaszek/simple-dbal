@@ -14,9 +14,14 @@ PHP offers 2 different APIs to connect to a SQL database: `PDO` and `mysqli` (we
 * They both have their own pros and cons.
 * Some features of one are missing in the other.
 
-This library exposes an API that can be used by any of them, transparently. Which means you may change from `PDO` to `mysqli` and vice-versa without having to rewrite your whole code.
+This library exposes an API that can be used by any of them, transparently, in a more modern approach (OOP, iterators, return types, etc). 
 
-Overview:
+This also means you can switch from `PDO` to `mysqli` and vice-versa without having to rewrite your whole code.
+
+From my personnal experience, I was used to `PDO` and was forced to deal with `mysqli` in another project and it was really messy.
+
+Overview
+--------
 
 ```php
 use BenTools\SimpleDBAL\Model\Credentials;
