@@ -27,8 +27,8 @@ abstract class MysqliTestCase extends TestCase
     {
         if (isset($data[0])) {
             foreach ($data as $item) {
-                $stmt = self::$cnx->getWrappedConnection()->prepare(sprintf("INSERT INTO %s VALUES (?, ?, ?)", self::$tableName));
-                $stmt->bind_param('iss', $item['id'], $item['name'], $item['created_at']);
+                $stmt = self::$cnx->getWrappedConnection()->prepare(sprintf("INSERT INTO %s (`name`, `created_at`) VALUES (?, ?)", self::$tableName));
+                $stmt->bind_param('ss', $item['name'], $item['created_at']);
                 $stmt->execute();
             }
         }

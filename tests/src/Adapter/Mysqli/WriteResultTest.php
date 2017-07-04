@@ -7,12 +7,10 @@ class WriteResultTest extends ReadResultTest
 
     public function testCount()
     {
-        $sql    = sprintf("INSERT INTO `%s` VALUES (?, ?, ?), (?, ?, ?)", self::$tableName);
+        $sql    = sprintf("INSERT INTO `%s` (`name`, `created_at`) VALUES (?, ?), (?, ?)", self::$tableName);
         $values = [
-            $this->sampleData[0]['id'],
             $this->sampleData[0]['name'],
             $this->sampleData[0]['created_at'],
-            $this->sampleData[1]['id'],
             $this->sampleData[1]['name'],
             $this->sampleData[1]['created_at'],
         ];
@@ -24,15 +22,13 @@ class WriteResultTest extends ReadResultTest
 
     public function testLastInsertId()
     {
-        $sql = sprintf("INSERT INTO `%s` VALUES (?, ?, ?)", self::$tableName);
+        $sql = sprintf("INSERT INTO `%s` (`name`, `created_at`) VALUES (?, ?)", self::$tableName);
         $result = self::$cnx->execute($sql, [
-            null,
             $this->sampleData[0]['name'],
             $this->sampleData[0]['created_at'],
         ]);
         $this->assertEquals(1, $result->getLastInsertId());
         $result = self::$cnx->execute($sql, [
-            null,
             $this->sampleData[1]['name'],
             $this->sampleData[1]['created_at'],
         ]);

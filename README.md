@@ -1,3 +1,8 @@
+[![Latest Stable Version](https://poser.pugx.org/bentools/simple-dbal/v/stable)](https://packagist.org/packages/bentools/simple-dbal)
+[![License](https://poser.pugx.org/bentools/simple-dbal/license)](https://packagist.org/packages/bentools/simple-dbal)
+[![Quality Score](https://img.shields.io/scrutinizer/g/bpolaszek/simple-dbal.svg?style=flat-square)](https://scrutinizer-ci.com/g/bpolaszek/simple-dbal)
+[![Total Downloads](https://poser.pugx.org/bentools/simple-dbal/downloads)](https://packagist.org/packages/bentools/simple-dbal)
+
 # SimpleDBAL
 PHP 7.1+ PDO/Mysqli abstraction layer with a KISS approach.
 

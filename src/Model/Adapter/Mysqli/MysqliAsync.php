@@ -8,7 +8,7 @@ use mysqli;
 use mysqli_result;
 use mysqli_sql_exception;
 
-class MysqliAsync implements \Countable
+final class MysqliAsync implements \Countable
 {
     private $queries   = [];
     private $processed = 0;
@@ -18,7 +18,7 @@ class MysqliAsync implements \Countable
     private static $usleep = 50000;
 
     /**
-     * MysqliAsyncPool constructor.
+     * MysqliAsync constructor.
      * Disabled to force singleton use.
      */
     private function __construct()
