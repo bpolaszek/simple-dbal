@@ -63,7 +63,7 @@ For _INSERT_ / _UPDATE_ / _DELETE_ queries, use the following methods:
 Installation
 ------------
 ```
-composer require bentools/simpledbal
+composer require bentools/simple-dbal
 ```
 
 Tests
