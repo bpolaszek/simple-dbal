@@ -109,7 +109,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
             if (0 !== $this->reconnectAttempts) {
                 usleep((int) $this->getOption(self::OPT_USLEEP_AFTER_FIRST_ATTEMPT));
             }
-            $this->cnx = self::createLink($this->getCredentials());
+            $this->cnx = self::createLink($this->getCredentials(), $this->options);
             if ($this->isConnected()) {
                 $this->reconnectAttempts = 0;
             } else {
@@ -242,14 +242,14 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
      */
     public static function factory(CredentialsInterface $credentials, array $options = null): self
     {
-        return new static(self::createLink($credentials), $credentials, $options);
+        return new static(self::createLink($credentials, $options), $credentials, $options);
     }
 
     /**
      * @param CredentialsInterface $credentials
      * @return PDO
      */
-    private static function createLink(CredentialsInterface $credentials): PDO
+    private static function createLink(CredentialsInterface $credentials, array $options = null): PDO
     {
         $dsn = sprintf('%s:', $credentials->getPlatform());
         $dsn .= sprintf('host=%s;', $credentials->getHostname());
@@ -260,7 +260,11 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
             $dsn .= sprintf('dbname=%s;', $credentials->getDatabase());
         }
         try {
-            return new PDO($dsn, $credentials->getUser(), $credentials->getPassword(), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $pdoOptions = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+            if (isset($options['charset'])) {
+                $pdoOptions[PDO::MYSQL_ATTR_INIT_COMMAND] = sprintf('SET NAMES %s', $options['charset']);
+            }
+            return new PDO($dsn, $credentials->getUser(), $credentials->getPassword(), $pdoOptions);
         } catch (\PDOException $e) {
             throw new AccessDeniedException($e->getMessage(), (int) $e->getCode(), $e);
         }

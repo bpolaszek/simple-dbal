@@ -38,7 +38,7 @@ if (!class_exists('PDO')) {
 }
 
 try {
-    $link = new PDO(sprintf('mysql:host=%s:%d', $credentials->getHostname(), $credentials->getPort()), $credentials->getUser(), $credentials->getPassword(), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $link = new PDO(sprintf('mysql:host=%s;port=%d', $credentials->getHostname(), $credentials->getPort()), $credentials->getUser(), $credentials->getPassword(), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 } catch (PDOException $e) {
 
     print PHP_EOL . PHP_EOL;

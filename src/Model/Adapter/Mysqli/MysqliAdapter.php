@@ -57,6 +57,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         $this->credentials = $credentials;
         if (null !== $options) {
             $this->options     = array_replace($this->getDefaultOptions(), $options);
+            if ($this->hasOption('charset')) {
+                $this->cnx->set_charset($this->getOption('charset'));
+            }
         }
     }
 
@@ -105,6 +108,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
                 $this->reconnectAttempts = 0;
             } else {
                 $this->reconnect();
+            }
+            if ($this->hasOption('charset')) {
+                $this->cnx->set_charset($this->getOption('charset'));
             }
         } catch (Throwable $e) {
             $this->reconnectAttempts++;
@@ -235,7 +241,10 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         try {
             // Clone connection (Mysqli Asynchronous queries require a different connection to work properly)
             $credentials = $this->getCredentials();
-            $cnx         = new mysqli($credentials->getHostname(), $credentials->getUser(), $credentials->getPassword(), $credentials->getDatabase(), $credentials->getPort());
+            $cnx         = self::createLink($credentials);
+            if ($this->hasOption('charset')) {
+                $cnx->set_charset($this->getOption('charset'));
+            }
         } catch (mysqli_sql_exception $e) {
             throw new AccessDeniedException($e->getMessage(), (int) $e->getCode(), $e);
         }
