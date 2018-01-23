@@ -41,10 +41,10 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * PDOAdapter constructor.
      * @param PDO $cnx
-     * @param CredentialsInterface $credentials
+     * @param CredentialsInterface|null $credentials
      * @param array|null $options
      */
-    public function __construct(PDO $cnx, CredentialsInterface $credentials, array $options = null)
+    protected function __construct(PDO $cnx, CredentialsInterface $credentials = null, array $options = null)
     {
         $this->cnx = $cnx;
         if (PDO::ERRMODE_EXCEPTION !== $this->cnx->getAttribute(PDO::ATTR_ERRMODE)) {
@@ -59,7 +59,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * @inheritDoc
      */
-    public function getWrappedConnection()
+    public function getWrappedConnection(): PDO
     {
         return $this->cnx;
     }
@@ -67,7 +67,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * @inheritDoc
      */
-    public function getCredentials(): CredentialsInterface
+    public function getCredentials(): ?CredentialsInterface
     {
         return $this->credentials;
     }
@@ -105,6 +105,11 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
         } elseif ($this->reconnectAttempts === (int) $this->getOption(self::OPT_MAX_RECONNECT_ATTEMPTS)) {
             throw new MaxConnectAttempsException("Max attempts to connect to database has been reached.");
         }
+
+        if (null === $this->credentials) {
+            throw new AccessDeniedException("Unable to reconnect: credentials not provided.");
+        }
+
         try {
             if (0 !== $this->reconnectAttempts) {
                 usleep((int) $this->getOption(self::OPT_USLEEP_AFTER_FIRST_ATTEMPT));
@@ -243,6 +248,16 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     public static function factory(CredentialsInterface $credentials, array $options = null): self
     {
         return new static(self::createLink($credentials, $options), $credentials, $options);
+    }
+
+    /**
+     * @param PDO                       $link
+     * @param CredentialsInterface|null $credentials
+     * @return PDOAdapter
+     */
+    public static function createFromLink(PDO $link, CredentialsInterface $credentials = null): self
+    {
+        return new static($link, $credentials);
     }
 
     /**

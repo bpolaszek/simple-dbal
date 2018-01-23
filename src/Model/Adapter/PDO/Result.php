@@ -26,6 +26,11 @@ class Result implements IteratorAggregate, ResultInterface
     private $storage = [];
 
     /**
+     * @var bool
+     */
+    private $storageEnabled = true;
+
+    /**
      * Result constructor.
      * @param PDO $pdo
      * @param Statement $stmt
@@ -68,7 +73,13 @@ class Result implements IteratorAggregate, ResultInterface
                 $this->resetResultset();
             }
 
-            $this->storage['array'] = $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (true === $this->storageEnabled) {
+                $this->storage['array'] = $result;
+            }
+
+            return $result;
         }
         return $this->storage['array'];
     }
@@ -89,7 +100,12 @@ class Result implements IteratorAggregate, ResultInterface
                     $this->resetResultset();
                 }
 
-                $this->storage['row'] = $this->stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                $result = $this->stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+                if (true === $this->storageEnabled) {
+                    $this->storage['row'] = $result;
+                }
+                return $result;
             }
         }
         return $this->storage['row'];
@@ -116,7 +132,14 @@ class Result implements IteratorAggregate, ResultInterface
                         yield $value;
                     }
                 };
-                $this->storage['list'] = iterator_to_array($generator($this->stmt));
+
+                $result = iterator_to_array($generator($this->stmt));
+
+                if (true === $this->storageEnabled) {
+                    $this->storage['list'] = $result;
+                }
+
+                return $result;
             }
         }
         return $this->storage['list'];
@@ -142,7 +165,13 @@ class Result implements IteratorAggregate, ResultInterface
                     $this->resetResultset();
                 }
 
-                $this->storage['value'] = $this->stmt->fetchColumn(0) ?: null;
+                $result = $this->stmt->fetchColumn(0) ?: null;
+
+                if (true === $this->storageEnabled) {
+                    $this->storage['value'] = $result;
+                }
+
+                return $result;
             }
         }
         return $this->storage['value'];
@@ -197,5 +226,16 @@ class Result implements IteratorAggregate, ResultInterface
     private function resetResultset()
     {
         $this->stmt->execute();
+    }
+
+    /**
+     * @return ResultInterface
+     */
+    public function withoutStorage(): ResultInterface
+    {
+        $clone = clone $this;
+        $clone->storage = [];
+        $clone->storageEnabled = false;
+        return $clone;
     }
 }

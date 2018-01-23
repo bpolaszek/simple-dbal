@@ -47,4 +47,9 @@ interface ResultInterface extends Countable, Traversable
      * @return int
      */
     public function count();
+
+    /**
+     * @return ResultInterface
+     */
+    public function withoutStorage(): ResultInterface;
 }

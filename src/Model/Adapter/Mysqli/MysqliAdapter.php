@@ -47,10 +47,10 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     /**
      * MysqliAdapter constructor.
      * @param mysqli $cnx
-     * @param CredentialsInterface $credentials
+     * @param CredentialsInterface|null $credentials
      * @param array|null $options
      */
-    public function __construct(mysqli $cnx, CredentialsInterface $credentials, array $options = null)
+    protected function __construct(mysqli $cnx, CredentialsInterface $credentials = null, array $options = null)
     {
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         $this->cnx         = $cnx;
@@ -66,7 +66,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     /**
      * @inheritDoc
      */
-    public function getWrappedConnection()
+    public function getWrappedConnection(): mysqli
     {
         return $this->cnx;
     }
@@ -74,7 +74,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     /**
      * @inheritDoc
      */
-    public function getCredentials(): CredentialsInterface
+    public function getCredentials(): ?CredentialsInterface
     {
         return $this->credentials;
     }
@@ -102,6 +102,11 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         } elseif ($this->reconnectAttempts === (int) $this->getOption(self::OPT_MAX_RECONNECT_ATTEMPTS)) {
             throw new MaxConnectAttempsException("Max attempts to connect to database has been reached.");
         }
+
+        if (null === $this->credentials) {
+            throw new AccessDeniedException("Unable to reconnect: credentials not provided.");
+        }
+
         try {
             $this->cnx = self::createLink($this->getCredentials());
             if ($this->isConnected()) {
@@ -336,6 +341,16 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     public static function factory(CredentialsInterface $credentials, array $options = null): self
     {
         return new static(self::createLink($credentials), $credentials, $options);
+    }
+
+    /**
+     * @param mysqli                    $link
+     * @param CredentialsInterface|null $credentials
+     * @return MysqliAdapter
+     */
+    public static function createFromLink(mysqli $link, CredentialsInterface $credentials = null): self
+    {
+        return new static($link, $credentials);
     }
 
     /**

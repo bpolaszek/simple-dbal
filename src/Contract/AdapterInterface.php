@@ -19,7 +19,7 @@ interface AdapterInterface extends ConnectionInterface
      *
      * @return CredentialsInterface
      */
-    public function getCredentials(): CredentialsInterface;
+    public function getCredentials(): ?CredentialsInterface;
 
     /**
      * Init a transaction.

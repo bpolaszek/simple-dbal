@@ -29,9 +29,14 @@ class Result implements IteratorAggregate, ResultInterface
     private $storage = [];
 
     /**
+     * @var bool
+     */
+    private $storageEnabled = true;
+
+    /**
      * Result constructor.
-     * @param mysqli $mysqli
-     * @param mysqli_stmt $stmt
+     * @param mysqli        $mysqli
+     * @param mysqli_stmt   $stmt
      * @param mysqli_result $result
      */
     public function __construct(mysqli $mysqli, mysqli_result $result = null, mysqli_stmt $stmt = null)
@@ -70,7 +75,13 @@ class Result implements IteratorAggregate, ResultInterface
                 $this->resetResultset();
             }
 
-            $this->storage['array'] = $this->result->fetch_all(MYSQLI_ASSOC);
+            $result = $this->result->fetch_all(MYSQLI_ASSOC);
+
+            if (true === $this->storageEnabled) {
+                $this->storage['array'] = $result;
+            }
+
+            return $result;
         }
         return $this->storage['array'];
     }
@@ -91,7 +102,13 @@ class Result implements IteratorAggregate, ResultInterface
                     $this->resetResultset();
                 }
 
-                $this->storage['row'] = $this->result->fetch_array(MYSQLI_ASSOC) ?: null;
+                $result = $this->result->fetch_array(MYSQLI_ASSOC) ?: null;
+
+                if (true === $this->storageEnabled) {
+                    $this->storage['row'] = $result;
+                }
+
+                return $result;
             }
         }
         return $this->storage['row'];
@@ -118,7 +135,13 @@ class Result implements IteratorAggregate, ResultInterface
                         yield $row[0];
                     }
                 };
-                $this->storage['list'] = iterator_to_array($generator($this->result));
+                $result = iterator_to_array($generator($this->result));
+
+                if (true === $this->storageEnabled) {
+                    $this->storage['list'] = $result;
+                }
+
+                return $result;
             }
         }
         return $this->storage['list'];
@@ -144,8 +167,14 @@ class Result implements IteratorAggregate, ResultInterface
                     $this->resetResultset();
                 }
 
-                $row                    = $this->result->fetch_array(MYSQLI_NUM);
-                $this->storage['value'] = $row ? $row[0] : null;
+                $row = $this->result->fetch_array(MYSQLI_NUM);
+                $result = $row ? $row[0] : null;
+
+                if (true === $this->storageEnabled) {
+                    $this->storage['value'] = $result;
+                }
+
+                return $result;
             }
         }
         return $this->storage['value'];
@@ -200,5 +229,16 @@ class Result implements IteratorAggregate, ResultInterface
             $this->stmt->execute();
             $this->result = $this->stmt->get_result();
         }
+    }
+
+    /**
+     * @return ResultInterface
+     */
+    public function withoutStorage(): ResultInterface
+    {
+        $clone = clone $this;
+        $clone->storage = [];
+        $clone->storageEnabled = false;
+        return $clone;
     }
 }
