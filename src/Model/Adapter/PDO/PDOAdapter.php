@@ -204,7 +204,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * @inheritDoc
      */
-    public function beginTransaction()
+    public function beginTransaction(): void
     {
         $this->getWrappedConnection()->beginTransaction();
     }
@@ -212,7 +212,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * @inheritDoc
      */
-    public function commit()
+    public function commit(): void
     {
         $this->getWrappedConnection()->commit();
     }
@@ -220,7 +220,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * @inheritDoc
      */
-    public function rollback()
+    public function rollback(): void
     {
         $this->getWrappedConnection()->rollBack();
     }

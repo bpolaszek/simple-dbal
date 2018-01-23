@@ -20,4 +20,19 @@ interface AdapterInterface extends ConnectionInterface
      * @return CredentialsInterface
      */
     public function getCredentials(): CredentialsInterface;
+
+    /**
+     * Init a transaction.
+     */
+    public function beginTransaction(): void;
+
+    /**
+     * Commit current transaction
+     */
+    public function commit(): void;
+
+    /**
+     * Rollback current transaction
+     */
+    public function rollback(): void;
 }

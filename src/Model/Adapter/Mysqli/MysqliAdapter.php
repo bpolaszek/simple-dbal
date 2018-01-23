@@ -280,7 +280,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     /**
      * @inheritDoc
      */
-    public function beginTransaction()
+    public function beginTransaction(): void
     {
         $this->getWrappedConnection()->autocommit(false);
     }
@@ -288,7 +288,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     /**
      * @inheritDoc
      */
-    public function commit()
+    public function commit(): void
     {
         $this->getWrappedConnection()->commit();
         $this->getWrappedConnection()->autocommit(true);
@@ -297,7 +297,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     /**
      * @inheritDoc
      */
-    public function rollback()
+    public function rollback(): void
     {
         $this->getWrappedConnection()->rollback();
         $this->getWrappedConnection()->autocommit(true);
