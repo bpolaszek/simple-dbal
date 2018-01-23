@@ -2,12 +2,15 @@
 
 namespace BenTools\SimpleDBAL\Contract;
 
+use mysqli;
+use PDO;
+
 interface AdapterInterface extends ConnectionInterface
 {
     /**
      * Return the wrapped connection object.
      *
-     * @return object
+     * @return mysqli|PDO
      */
     public function getWrappedConnection();
 
