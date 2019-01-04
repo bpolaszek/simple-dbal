@@ -4,7 +4,7 @@
 [![Total Downloads](https://poser.pugx.org/bentools/simple-dbal/downloads)](https://packagist.org/packages/bentools/simple-dbal)
 
 # SimpleDBAL
-PHP 7.1+ PDO/Mysqli abstraction layer with a KISS approach.
+A modern wrapper on top of PDO and Mysqli, written in PHP7.1. It aims at exposing the same API regardless of the one your project uses.
 
 Introduction
 ------------
@@ -37,21 +37,21 @@ foreach ($cnx->execute($query, [new DateTime('-1 month')]) as $item) {
 
 Additionnal features
 --------------------
-* Parameter binding on the fly for prepared statements
+* On-the-fly parameter binding for prepared statements (simply pass an array of arguments after the query)
 * `DateTimeInterface` objects automatic binding (formats to YYYY-MM-DD HH:ii:ss)
 * [Asynchronous queries](doc/03-AsynchronousQueries.md) (Promises)
 * [Parallel queries](doc/03-AsynchronousQueries.md#parallel-queries)
-* Named parameters for prepared statements in `mysqli` (portage with regexps - experimental feature)
-* Can silently reconnect after a lost connection
+* Support for named parameters in prepared statements for `mysqli` (polyfill with regexps - experimental feature)
+* Can [silently reconnect](doc/02-Configuration.md) after a lost connection
 
 The `Result` object
 ------------------
-Every query sent to the adapter must return a `BenTools\SimpleDBAL\Contract\ResultInterface` object.
+Every query sent to the adapter will return a `BenTools\SimpleDBAL\Contract\ResultInterface` object.
 
 For _SELECT_ queries, use the following methods:
 * `$result->asArray()` to fetch an array containing the whole resultset
 * `$result->asRow()` to fetch the 1st row of the resultset, as an associative array
-* `$result->asList()` to fetch the 1st column of the resultset, as an indexed array
+* `$result->asList()` to fetch the 1st column of the resultset, as a sequential array
 * `$result->asValue()` to fetch a single value (i.e the 1st column of the 1st row)
 * `foreach ($result as $row)` to iterate over the resultset (uses lazy-loading)
 * `count($result)` to return the number of rows of the resultset.
