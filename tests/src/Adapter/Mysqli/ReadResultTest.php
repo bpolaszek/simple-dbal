@@ -3,10 +3,10 @@
 namespace BenTools\SimpleDBAL\Tests\Adapter\Mysqli;
 
 use BenTools\SimpleDBAL\Model\Adapter\Mysqli\Result;
+use BenTools\SimpleDBAL\Model\Exception\DBALException;
 
 class ReadResultTest extends MysqliTestCase
 {
-
     protected $sampleData = [
         [
             'id' => null,
@@ -48,27 +48,16 @@ class ReadResultTest extends MysqliTestCase
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
         $this->assertEquals($this->expectedResult, iterator_to_array($result));
-        $this->assertEquals($this->expectedResult, iterator_to_array($result));
     }
 
-    public function testArrayAfterIterator()
+    public function testIteratorYellsWhenCalledTwice()
     {
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
+        $this->expectException(DBALException::class);
+        $this->expectExceptionMessage('This result is frozen. You have to re-execute this statement.');
         iterator_to_array($result);
-        $this->assertEquals($this->expectedResult, $result->asArray());
-        $this->assertEquals($this->expectedResult, $result->asArray());
-    }
-
-    public function testArrayAfterIncompleteIterator()
-    {
-        $this->insertSampleData($this->sampleData);
-        $result = $this->fetchResult();
-        foreach ($result as $item) {
-            break;
-        }
-        $this->assertEquals($this->expectedResult, $result->asArray());
-        $this->assertEquals($this->expectedResult, $result->asArray());
+        iterator_to_array($result);
     }
 
     public function testArray()
@@ -76,16 +65,16 @@ class ReadResultTest extends MysqliTestCase
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
         $this->assertEquals($this->expectedResult, $result->asArray());
-        $this->assertEquals($this->expectedResult, $result->asArray());
     }
 
-    public function testIteratorAfterArray()
+    public function testArrayYellsWhenCalledTwice()
     {
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
+        $this->expectException(DBALException::class);
+        $this->expectExceptionMessage('This result is frozen. You have to re-execute this statement.');
         $result->asArray();
-        $this->assertEquals($this->expectedResult, iterator_to_array($result));
-        $this->assertEquals($this->expectedResult, iterator_to_array($result));
+        $result->asArray();
     }
 
     public function testRow()
@@ -93,16 +82,16 @@ class ReadResultTest extends MysqliTestCase
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
         $this->assertEquals($this->expectedResult[0], $result->asRow());
-        $this->assertEquals($this->expectedResult[0], $result->asRow());
     }
 
-    public function testRowAfterArray()
+    public function testRowYellsWhenCalledTwice()
     {
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
-        $result->asArray();
-        $this->assertEquals($this->expectedResult[0], $result->asRow());
-        $this->assertEquals($this->expectedResult[0], $result->asRow());
+        $this->expectException(DBALException::class);
+        $this->expectExceptionMessage('This result is frozen. You have to re-execute this statement.');
+        $result->asRow();
+        $result->asRow();
     }
 
     public function testList()
@@ -110,16 +99,16 @@ class ReadResultTest extends MysqliTestCase
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
         $this->assertEquals(array_column($this->expectedResult, 'id'), $result->asList());
-        $this->assertEquals(array_column($this->expectedResult, 'id'), $result->asList());
     }
 
-    public function testListAfterArray()
+    public function testListYellsWhenCalledTwice()
     {
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
-        $result->asArray();
-        $this->assertEquals(array_column($this->expectedResult, 'id'), $result->asList());
-        $this->assertEquals(array_column($this->expectedResult, 'id'), $result->asList());
+        $this->expectException(DBALException::class);
+        $this->expectExceptionMessage('This result is frozen. You have to re-execute this statement.');
+        $result->asList();
+        $result->asList();
     }
 
     public function testValue()
@@ -127,33 +116,15 @@ class ReadResultTest extends MysqliTestCase
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
         $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
     }
 
-    public function testValueAfterList()
+    public function testValueYellsWhenCalledTwice()
     {
         $this->insertSampleData($this->sampleData);
         $result = $this->fetchResult();
-        $result->asList();
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
-    }
-
-    public function testValueAfterRow()
-    {
-        $this->insertSampleData($this->sampleData);
-        $result = $this->fetchResult();
-        $result->asRow();
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
-    }
-
-    public function testValueAfterArray()
-    {
-        $this->insertSampleData($this->sampleData);
-        $result = $this->fetchResult();
-        $result->asArray();
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
-        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
+        $this->expectException(DBALException::class);
+        $this->expectExceptionMessage('This result is frozen. You have to re-execute this statement.');
+        $result->asValue();
+        $result->asValue();
     }
 }

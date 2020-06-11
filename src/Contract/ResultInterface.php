@@ -37,6 +37,7 @@ interface ResultInterface extends Countable, Traversable
 
     /**
      * Return the ID of the last inserted row or sequence value.
+     *
      * @return mixed|null
      */
     public function getLastInsertId();
@@ -46,10 +47,5 @@ interface ResultInterface extends Countable, Traversable
      *
      * @return int
      */
-    public function count();
-
-    /**
-     * @return ResultInterface
-     */
-    public function withoutStorage(): ResultInterface;
+    public function count(): int;
 }
