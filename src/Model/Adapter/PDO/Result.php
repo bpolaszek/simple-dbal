@@ -25,6 +25,10 @@ final class Result implements IteratorAggregate, ResultInterface
      */
     public function getLastInsertId()
     {
+        if (null === $this->pdo) {
+            throw new DBALException("No \PDO object provided.");
+        }
+
         return $this->pdo->lastInsertId();
     }
 

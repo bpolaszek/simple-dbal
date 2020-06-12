@@ -23,12 +23,6 @@ final class Result implements IteratorAggregate, ResultInterface
 
     private $frozen = false;
 
-    /**
-     * Result constructor.
-     * @param mysqli $mysqli
-     * @param mysqli_stmt $stmt
-     * @param mysqli_result $result
-     */
     public function __construct(mysqli $mysqli = null, mysqli_result $result = null)
     {
         $this->mysqli = $mysqli;
@@ -40,6 +34,10 @@ final class Result implements IteratorAggregate, ResultInterface
      */
     public function getLastInsertId()
     {
+        if (null === $this->mysqli) {
+            throw new DBALException("No \mysqli object provided.");
+        }
+
         return $this->mysqli->insert_id;
     }
 
@@ -48,7 +46,7 @@ final class Result implements IteratorAggregate, ResultInterface
      */
     public function count(): int
     {
-        return null === $this->result ? $this->mysqli->affected_rows : $this->result->num_rows;
+        return null === $this->result ? $this->getAffectedRows() : $this->getNumRows();
     }
 
     /**
@@ -57,7 +55,7 @@ final class Result implements IteratorAggregate, ResultInterface
     public function asArray(): array
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
 
         $this->freeze();
@@ -71,7 +69,7 @@ final class Result implements IteratorAggregate, ResultInterface
     public function asRow(): ?array
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
 
         $this->freeze();
@@ -85,7 +83,7 @@ final class Result implements IteratorAggregate, ResultInterface
     public function asList(): array
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
 
         $this->freeze();
@@ -105,7 +103,7 @@ final class Result implements IteratorAggregate, ResultInterface
     public function asValue()
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
 
         $this->freeze();
@@ -121,7 +119,7 @@ final class Result implements IteratorAggregate, ResultInterface
     public function getIterator()
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
 
         $this->freeze();
@@ -138,6 +136,24 @@ final class Result implements IteratorAggregate, ResultInterface
         }
 
         $this->frozen = true;
+    }
+
+    private function getAffectedRows()
+    {
+        if (null === $this->mysqli) {
+            throw new DBALException("No \mysqli object provided.");
+        }
+
+        return $this->mysqli->affected_rows;
+    }
+
+    private function getNumRows()
+    {
+        if (null === $this->result) {
+            throw new DBALException("No \mysqli_result object provided.");
+        }
+
+        return $this->result->num_rows;
     }
 
     public static function from(...$arguments): self
