@@ -130,4 +130,14 @@ class ReadResultTest extends PDOTestCase
         $result->asValue();
     }
 
+    public function testInstanciateFromExistingResultset()
+    {
+        $this->insertSampleData($this->sampleData);
+        /** @var \PDO $link */
+        $link = self::$cnx->getWrappedConnection();
+        $rows = $link->query(sprintf("SELECT * FROM `%s` ORDER BY id", self::$tableName));
+        $result = Result::from($rows);
+        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
+    }
+
 }

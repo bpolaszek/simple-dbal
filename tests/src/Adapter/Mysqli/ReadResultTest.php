@@ -127,4 +127,14 @@ class ReadResultTest extends MysqliTestCase
         $result->asValue();
         $result->asValue();
     }
+
+    public function testInstanciateFromExistingResultset()
+    {
+        $this->insertSampleData($this->sampleData);
+        /** @var \mysqli $link */
+        $link = self::$cnx->getWrappedConnection();
+        $rows = \mysqli_query($link, sprintf("SELECT * FROM `%s` ORDER BY id", self::$tableName));
+        $result = Result::from($rows);
+        $this->assertEquals($this->expectedResult[0]['id'], $result->asValue());
+    }
 }

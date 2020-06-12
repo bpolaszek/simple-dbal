@@ -9,20 +9,15 @@ use mysqli;
 use mysqli_result;
 use mysqli_stmt;
 
-class Result implements IteratorAggregate, ResultInterface
+final class Result implements IteratorAggregate, ResultInterface
 {
     /**
-     * @var mysqli
+     * @var mysqli|null
      */
     private $mysqli;
 
     /**
-     * @var mysqli_stmt
-     */
-    private $stmt;
-
-    /**
-     * @var mysqli_result
+     * @var mysqli_result|null
      */
     private $result;
 
@@ -34,10 +29,9 @@ class Result implements IteratorAggregate, ResultInterface
      * @param mysqli_stmt $stmt
      * @param mysqli_result $result
      */
-    public function __construct(mysqli $mysqli, mysqli_result $result = null, mysqli_stmt $stmt = null)
+    public function __construct(mysqli $mysqli = null, mysqli_result $result = null)
     {
         $this->mysqli = $mysqli;
-        $this->stmt = $stmt;
         $this->result = $result;
     }
 
@@ -144,5 +138,20 @@ class Result implements IteratorAggregate, ResultInterface
         }
 
         $this->frozen = true;
+    }
+
+    public static function from(...$arguments): self
+    {
+        $instance = new self;
+        foreach ($arguments as $argument) {
+            if ($argument instanceof mysqli) {
+                $instance->mysqli = $argument;
+            }
+            if ($argument instanceof mysqli_result) {
+                $instance->result = $argument;
+            }
+        }
+
+        return $instance;
     }
 }

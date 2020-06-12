@@ -8,7 +8,7 @@ use IteratorAggregate;
 use PDO;
 use PDOStatement;
 
-class Result implements IteratorAggregate, ResultInterface
+final class Result implements IteratorAggregate, ResultInterface
 {
     private $pdo;
     private $stmt;
@@ -125,5 +125,20 @@ class Result implements IteratorAggregate, ResultInterface
         }
 
         $this->frozen = true;
+    }
+
+    public static function from(...$arguments): self
+    {
+        $instance = new self;
+        foreach ($arguments as $argument) {
+            if ($argument instanceof PDO) {
+                $instance->pdo = $argument;
+            }
+            if ($argument instanceof PDOStatement) {
+                $instance->stmt = $argument;
+            }
+        }
+
+        return $instance;
     }
 }
