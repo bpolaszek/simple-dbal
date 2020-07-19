@@ -84,7 +84,7 @@ final class Result implements IteratorAggregate, ResultInterface
         $this->freeze();
 
         $generator = static function (PDOStatement $stmt) {
-            while ($value = $stmt->fetchColumn(0)) {
+            while (false !== ($value = $stmt->fetchColumn(0))) {
                 yield $value;
             }
         };
@@ -103,7 +103,9 @@ final class Result implements IteratorAggregate, ResultInterface
 
         $this->freeze();
 
-        return $this->stmt->fetchColumn(0) ?: null;
+        $value = $this->stmt->fetchColumn(0);
+
+        return false !== $value ? $value : null;
     }
 
     /**
