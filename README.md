@@ -74,7 +74,7 @@ Tests
 ```
 
 Documentation
------
+-------------
 
 [Getting started](doc/01-GettingStarted.md)
 
@@ -85,3 +85,9 @@ Documentation
 [Connection pools](doc/04-ConnectionPools.md)
 
 [Known Issues](doc/05-KnownIssues.md)
+
+
+See also
+--------
+
+[bentools/where](https://github.com/bpolaszek/where) - A fluent, immutable SQL expressions builder.
