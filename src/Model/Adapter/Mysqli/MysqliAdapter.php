@@ -22,7 +22,6 @@ use Throwable;
 
 final class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, ReconnectableAdapterInterface
 {
-
     use ConfigurableTrait;
 
     public const OPT_RESOLVE_NAMED_PARAMS = 'resolve_named_params';
@@ -136,7 +135,6 @@ final class MysqliAdapter implements AdapterInterface, TransactionAdapterInterfa
      */
     public function prepare(string $queryString, array $values = null): StatementInterface
     {
-
         if (true === $this->getOption(self::OPT_EMULATE_PREPARED_STATEMENTS)) {
             return $this->emulatePrepare($queryString, $values);
         }
@@ -212,7 +210,6 @@ final class MysqliAdapter implements AdapterInterface, TransactionAdapterInterfa
      */
     public function executeAsync($stmt, array $values = null): PromiseInterface
     {
-
         if (true === $this->getOption(self::OPT_ENABLE_PARALLEL_QUERIES)) {
             return $this->executeParallel($stmt, $values);
         }
@@ -291,10 +288,12 @@ final class MysqliAdapter implements AdapterInterface, TransactionAdapterInterfa
         } catch (mysqli_sql_exception $e) {
             if (false !== strpos($e->getMessage(), 'No data supplied for parameters in prepared statement')) {
                 throw new ParamBindingException($e->getMessage(), (int) $e->getCode(), $e, $stmt);
-            } elseif (false !== strpos(
+            } elseif (
+                false !== strpos(
                     $e->getMessage(),
                     "Number of variables doesn't match number of parameters in prepared statement"
-                )) {
+                )
+            ) {
                 throw new ParamBindingException($e->getMessage(), (int) $e->getCode(), $e, $stmt);
             } else {
                 throw new DBALException($e->getMessage(), (int) $e->getCode(), $e);

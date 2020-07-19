@@ -12,10 +12,9 @@
     "guzzlehttp/promises": "^1.3"
   },
   "require-dev": {
-    "squizlabs/php_codesniffer": "~2.0",
+    "squizlabs/php_codesniffer": "^3.5",
     "symfony/var-dumper": "^3.2",
     "bentools/iterable-functions": "^1.1",
-    "incenteev/composer-parameter-handler": "^2.1",
     "symfony/yaml": "^3.2",
     "phpstan/phpstan": "^0.12.32",
     "php-coveralls/php-coveralls": "^2.2",
@@ -36,14 +35,17 @@
     }
   },
   "scripts": {
-    "set-parameters": [
-      "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters"
-    ]
+        "tests:run": "vendor/bin/phpunit",
+        "phpcs:check": "vendor/bin/phpcs --standard=PSR12 -n src",
+        "php-cs-fixer:run": "vendor/bin/php-cs-fixer fix src --allow-risky=yes",
+        "phpcbf:run": "vendor/bin/phpcbf --standard=PSR12 -n bin migrations src tests || true",
+        "phpcs:fix": [
+            "@php-cs-fixer:run",
+            "@phpcbf:run"
+        ],
+        "phpstan:analyze": "vendor/bin/phpstan analyze"
   },
   "extra": {
-    "incenteev-parameters": {
-      "file": "tests/config/settings.yml"
-    },
     "branch-alias": {
       "dev-master": "1.0.x-dev"
     }

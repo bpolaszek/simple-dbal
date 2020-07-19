@@ -135,7 +135,7 @@ final class Result implements IteratorAggregate, ResultInterface
 
     public static function from(...$arguments): self
     {
-        $instance = new self;
+        $instance = new self();
         foreach ($arguments as $argument) {
             if ($argument instanceof PDO) {
                 $instance->pdo = $argument;

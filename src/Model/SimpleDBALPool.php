@@ -8,10 +8,9 @@ use BenTools\SimpleDBAL\Contract\StatementInterface;
 
 class SimpleDBALPool
 {
-
-    const READ_WRITE = 1;
-    const READ_ONLY  = 2;
-    const WRITE_ONLY = 3;
+    public const READ_WRITE = 1;
+    public const READ_ONLY  = 2;
+    public const WRITE_ONLY = 3;
 
     protected $rConnections  = [];
     protected $wConnections  = [];
@@ -21,7 +20,7 @@ class SimpleDBALPool
      * @param int $access
      * @param int $weight
      */
-    public function attach(ConnectionInterface $connection, int $access = self::READ_WRITE, int $weight = 1)
+    public function attach(ConnectionInterface $connection, int $access = self::READ_WRITE, int $weight = 1): void
     {
         if ($weight >= 1) {
             switch ($access) {
@@ -44,7 +43,7 @@ class SimpleDBALPool
     /**
      * @param ConnectionInterface $connection
      */
-    public function detach(ConnectionInterface $connection)
+    public function detach(ConnectionInterface $connection): void
     {
         $reorderReadConnections = false;
         $reorderWriteConnections = false;

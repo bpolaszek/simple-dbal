@@ -4,7 +4,6 @@ namespace BenTools\SimpleDBAL\Model;
 
 trait ConfigurableTrait
 {
-
     protected $options;
 
     /**

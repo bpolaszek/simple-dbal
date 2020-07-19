@@ -12,7 +12,6 @@ use mysqli_stmt;
 
 class Statement implements StatementInterface
 {
-
     use StatementTrait;
 
     /**
@@ -192,8 +191,7 @@ class Statement implements StatementInterface
             foreach ($this->values as $value) {
                 $preview = preg_replace("/([\?])/", $escape($value), $preview, 1);
             }
-        } # Case of named placeholders
-        else {
+        } else { # Case of named placeholders
             foreach ($this->values as $key => $value) {
                 if (!in_array($key, $keywords, true)) {
                     $keywords[] = $key;

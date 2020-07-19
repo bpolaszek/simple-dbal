@@ -133,7 +133,7 @@ class Statement implements StatementInterface
         if (!is_scalar($value) && null !== $value) {
             throw new \InvalidArgumentException("Can only cast scalar variables.");
         }
-        switch (strtolower(gettype($value))) :
+        switch (strtolower(gettype($value))) {
             case 'integer':
                 return PDO::PARAM_INT;
             case 'boolean':
@@ -144,7 +144,7 @@ class Statement implements StatementInterface
             case 'string':
             default:
                 return PDO::PARAM_STR;
-        endswitch;
+        }
     }
 
     /**
@@ -181,8 +181,7 @@ class Statement implements StatementInterface
             foreach ($this->values as $value) {
                 $preview = preg_replace("/([\?])/", $escape($value), $preview, 1);
             }
-        } # Case of named placeholders
-        else {
+        } else { # Case of named placeholders
             foreach ($this->values as $key => $value) {
                 if (!in_array($key, $keywords, true)) {
                     $keywords[] = $key;

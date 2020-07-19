@@ -15,6 +15,14 @@
          stopOnFailure="false"
          verbose="true"
 >
+    <php>
+        <ini name="error_reporting" value="-1" />
+        <server name="DATABASE_HOST" value="localhost" force="true" />
+        <server name="DATABASE_USER" value="test" force="true" />
+        <server name="DATABASE_PASSWORD" value="test" force="true" />
+        <server name="DATABASE_NAME" value="test" force="true" />
+    </php>
+
     <testsuites>
         <testsuite name="Full Test Suite">
             <directory suffix="Test.php">./tests/src</directory>

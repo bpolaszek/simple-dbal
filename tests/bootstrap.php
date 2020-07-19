@@ -4,18 +4,6 @@ use BenTools\SimpleDBAL\Tests\TestSuite;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$configFile = __DIR__ . '/config/settings.yml';
-if (!is_readable($configFile)) {
-    print PHP_EOL . PHP_EOL;
-    printf('The config file %s is not readable.' . PHP_EOL, $configFile);
-    printf('Create this file and put your databse settings in it (see %s.dist)' . PHP_EOL, $configFile);
-    printf('You can also run the following command to do this interactively:');
-    print PHP_EOL . PHP_EOL;
-    print 'composer run-script set-parameters';
-    print PHP_EOL . PHP_EOL;
-    exit;
-}
-
 $settings = TestSuite::getSettings();
 $credentials = TestSuite::getCredentialsFromSettings($settings);
 
