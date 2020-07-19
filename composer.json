@@ -12,13 +12,15 @@
     "guzzlehttp/promises": "^1.3"
   },
   "require-dev": {
-    "phpunit/phpunit": "^6.0",
     "squizlabs/php_codesniffer": "~2.0",
-    "satooshi/php-coveralls": "^1.0",
     "symfony/var-dumper": "^3.2",
     "bentools/iterable-functions": "^1.1",
     "incenteev/composer-parameter-handler": "^2.1",
-    "symfony/yaml": "^3.2"
+    "symfony/yaml": "^3.2",
+    "phpstan/phpstan": "^0.12.32",
+    "php-coveralls/php-coveralls": "^2.2",
+    "phpunit/phpunit": "^7.0",
+    "friendsofphp/php-cs-fixer": "^2.16"
   },
   "autoload-dev": {
     "psr-4": {

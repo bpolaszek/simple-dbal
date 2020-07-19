@@ -19,7 +19,7 @@ use PDO;
 use PDOException;
 use Throwable;
 
-class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, ReconnectableAdapterInterface
+final class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, ReconnectableAdapterInterface
 {
     use ConfigurableTrait;
 
@@ -29,7 +29,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     private $cnx;
 
     /**
-     * @var CredentialsInterface
+     * @var CredentialsInterface|null
      */
     private $credentials;
 
@@ -44,7 +44,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
      * @param CredentialsInterface|null $credentials
      * @param array|null $options
      */
-    protected function __construct(PDO $cnx, CredentialsInterface $credentials = null, array $options = null)
+    protected function __construct(PDO $cnx, ?CredentialsInterface $credentials = null, array $options = null)
     {
         $this->cnx = $cnx;
         if (PDO::ERRMODE_EXCEPTION !== $this->cnx->getAttribute(PDO::ATTR_ERRMODE)) {
@@ -98,7 +98,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
     /**
      * Tries to reconnect to database.
      */
-    private function reconnect()
+    private function reconnect(): void
     {
         if (0 === (int) $this->getOption(self::OPT_MAX_RECONNECT_ATTEMPTS)) {
             throw new MaxConnectAttempsException("Connection lost.");
@@ -184,10 +184,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
         return $promise;
     }
 
-    /**
-     * @param \PDOStatement $wrappedStmt
-     */
-    private function runStmt(Statement $stmt)
+    private function runStmt(StatementInterface $stmt): void
     {
         $wrappedStmt = $stmt->getWrappedStatement();
         try {
@@ -257,7 +254,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
      */
     public static function createFromLink(PDO $link, CredentialsInterface $credentials = null): self
     {
-        return new static($link, $credentials);
+        return new self($link, $credentials);
     }
 
     /**
@@ -292,7 +289,7 @@ class PDOAdapter implements AdapterInterface, TransactionAdapterInterface, Recon
      */
     private static function wrapWithErrorHandler(callable $run)
     {
-        $errorHandler = function ($errno, $errstr) {
+        $errorHandler = static function ($errno, $errstr) {
             throw new PDOException($errstr, $errno);
         };
         set_error_handler($errorHandler, E_WARNING);

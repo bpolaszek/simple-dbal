@@ -8,7 +8,7 @@ trait ConfigurableTrait
     protected $options;
 
     /**
-     * @param $key
+     * @param string $key
      * @return mixed
      */
     public function getOption($key)
@@ -20,7 +20,7 @@ trait ConfigurableTrait
     }
 
     /**
-     * @param $key
+     * @param string $key
      * @return bool
      */
     public function hasOption($key): bool
@@ -43,26 +43,15 @@ trait ConfigurableTrait
     }
 
     /**
-     * @param $key
-     * @param $value
+     * @param string $key
+     * @param mixed $value
      */
-    public function setOption($key, $value)
+    public function setOption($key, $value): void
     {
         if (null === $this->options) {
             $this->options = $this->getDefaultOptions();
         }
         $this->options[$key] = $value;
-    }
-
-    /**
-     * @param $key
-     */
-    public function unsetOption($key)
-    {
-        if (null === $this->options) {
-            $this->options = $this->getDefaultOptions();
-        }
-        unset($this->options[$key]);
     }
 
     /**

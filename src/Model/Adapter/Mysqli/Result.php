@@ -138,7 +138,7 @@ final class Result implements IteratorAggregate, ResultInterface
         $this->frozen = true;
     }
 
-    private function getAffectedRows(): ?int
+    private function getAffectedRows(): int
     {
         if (null === $this->mysqli) {
             throw new DBALException("No \mysqli object provided.");
@@ -147,7 +147,7 @@ final class Result implements IteratorAggregate, ResultInterface
         return $this->mysqli->affected_rows;
     }
 
-    private function getNumRows(): ?int
+    private function getNumRows(): int
     {
         if (null === $this->result) {
             throw new DBALException("No \mysqli_result object provided.");

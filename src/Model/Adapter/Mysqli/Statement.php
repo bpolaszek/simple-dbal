@@ -130,7 +130,7 @@ class Statement implements StatementInterface
     /**
      * Attempt to convert non-scalar values.
      *
-     * @param $value
+     * @param mixed $value
      * @return string
      */
     protected function toScalar($value)
@@ -215,10 +215,10 @@ class Statement implements StatementInterface
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @return string
      */
-    protected function getMysqliType($value)
+    protected function getMysqliType($value): ?string
     {
         if (!is_scalar($value)) {
             throw new \InvalidArgumentException(sprintf("Can only cast scalar variables, %s given.", gettype($value)));

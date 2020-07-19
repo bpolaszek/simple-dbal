@@ -56,7 +56,7 @@ class Statement implements StatementInterface
      * @inheritDoc
      * @return PDOStatement
      */
-    public function getWrappedStatement()
+    public function getWrappedStatement(): PDOStatement
     {
         return $this->stmt;
     }
@@ -102,7 +102,7 @@ class Statement implements StatementInterface
     /**
      * Attempt to convert non-scalar values.
      *
-     * @param $value
+     * @param mixed $value
      * @return string
      */
     protected function toScalar($value)
@@ -125,10 +125,10 @@ class Statement implements StatementInterface
     }
 
     /**
-     * @param $var
+     * @param mixed $value
      * @return int
      */
-    protected function getPdoType($value)
+    protected function getPdoType($value): ?int
     {
         if (!is_scalar($value) && null !== $value) {
             throw new \InvalidArgumentException("Can only cast scalar variables.");

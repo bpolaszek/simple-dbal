@@ -32,7 +32,7 @@ class Credentials implements CredentialsInterface
     private $platform;
 
     /**
-     * @var string
+     * @var int
      */
     private $port;
 
