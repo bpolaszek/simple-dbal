@@ -20,14 +20,13 @@ use mysqli_result;
 use mysqli_sql_exception;
 use Throwable;
 
-class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, ReconnectableAdapterInterface
+final class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, ReconnectableAdapterInterface
 {
-
     use ConfigurableTrait;
 
-    const OPT_RESOLVE_NAMED_PARAMS        = 'resolve_named_params';
-    const OPT_ENABLE_PARALLEL_QUERIES     = 'enable_parallel_queries';
-    const OPT_EMULATE_PREPARED_STATEMENTS = 'emulate_prepared_statements';
+    public const OPT_RESOLVE_NAMED_PARAMS = 'resolve_named_params';
+    public const OPT_ENABLE_PARALLEL_QUERIES = 'enable_parallel_queries';
+    public const OPT_EMULATE_PREPARED_STATEMENTS = 'emulate_prepared_statements';
 
     /**
      * @var mysqli
@@ -35,7 +34,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     private $cnx;
 
     /**
-     * @var CredentialsInterface
+     * @var CredentialsInterface|null
      */
     private $credentials;
 
@@ -50,13 +49,13 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
      * @param CredentialsInterface|null $credentials
      * @param array|null $options
      */
-    protected function __construct(mysqli $cnx, CredentialsInterface $credentials = null, array $options = null)
+    protected function __construct(mysqli $cnx, ?CredentialsInterface $credentials = null, array $options = null)
     {
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-        $this->cnx         = $cnx;
+        $this->cnx = $cnx;
         $this->credentials = $credentials;
         if (null !== $options) {
-            $this->options     = array_replace($this->getDefaultOptions(), $options);
+            $this->options = array_replace($this->getDefaultOptions(), $options);
             if ($this->hasOption('charset')) {
                 $this->cnx->set_charset($this->getOption('charset'));
             }
@@ -136,7 +135,6 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
      */
     public function prepare(string $queryString, array $values = null): StatementInterface
     {
-
         if (true === $this->getOption(self::OPT_EMULATE_PREPARED_STATEMENTS)) {
             return $this->emulatePrepare($queryString, $values);
         }
@@ -148,16 +146,20 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         }
 
         try {
-            $wrappedStmt = self::wrapWithErrorHandler(function () use ($runnableQueryString) {
-                return $this->cnx->prepare($runnableQueryString);
-            });
+            $wrappedStmt = self::wrapWithErrorHandler(
+                function () use ($runnableQueryString) {
+                    return $this->cnx->prepare($runnableQueryString);
+                }
+            );
         } catch (mysqli_sql_exception $e) {
             if (!$this->isConnected()) {
                 $this->reconnect();
+
                 return $this->prepare($queryString, $values);
             }
             throw new DBALException($e->getMessage(), (int) $e->getCode(), $e);
         }
+
         return new Statement($this, $wrappedStmt, $values, $queryString, $runnableQueryString);
     }
 
@@ -182,7 +184,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
             $stmt = $this->prepare($stmt, $values);
         } else {
             if (!$stmt instanceof Statement) {
-                throw new \InvalidArgumentException(sprintf('Expected %s object, got %s', Statement::class, get_class($stmt)));
+                throw new \InvalidArgumentException(
+                    sprintf('Expected %s object, got %s', Statement::class, get_class($stmt))
+                );
             }
             if (null !== $values) {
                 $stmt = $stmt->withValues($values);
@@ -190,11 +194,11 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         }
 
         try {
-            $result = $this->runStmt($stmt);
-            return $result;
+            return $this->runStmt($stmt);
         } catch (Throwable $e) {
             if (!$this->isConnected()) {
                 $this->reconnect();
+
                 return $this->execute($this->prepare((string) $stmt, $stmt->getValues()));
             }
             throw $e;
@@ -206,26 +210,28 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
      */
     public function executeAsync($stmt, array $values = null): PromiseInterface
     {
-
         if (true === $this->getOption(self::OPT_ENABLE_PARALLEL_QUERIES)) {
             return $this->executeParallel($stmt, $values);
         }
 
-        $promise = new Promise(function () use (&$promise, $stmt, $values) {
-            try {
-                $promise->resolve($this->execute($stmt, $values));
-            } catch (Throwable $e) {
-                $promise->reject($e);
+        $promise = new Promise(
+            function () use (&$promise, $stmt, $values) {
+                try {
+                    $promise->resolve($this->execute($stmt, $values));
+                } catch (Throwable $e) {
+                    $promise->reject($e);
+                }
             }
-        });
+        );
+
         return $promise;
     }
 
     /**
-     * EXPERIMENTAL ! Executes a statement asynchronously.
+     * Executes a statement asynchronously.
      * The promise will return a Result object.
      *
-     * @param $stmt
+     * @param mixed $stmt
      * @param array|null $values
      * @return PromiseInterface
      */
@@ -235,7 +241,9 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
             $stmt = $this->emulatePrepare((string) $stmt, $values);
         } else {
             if (!$stmt instanceof Statement) {
-                throw new \InvalidArgumentException(sprintf('Expected %s object, got %s', Statement::class, get_class($stmt)));
+                throw new \InvalidArgumentException(
+                    sprintf('Expected %s object, got %s', Statement::class, get_class($stmt))
+                );
             }
             if (!$stmt instanceof EmulatedStatement) {
                 $stmt = $this->emulatePrepare((string) $stmt, $values ?? $stmt->getValues());
@@ -246,7 +254,7 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         try {
             // Clone connection (Mysqli Asynchronous queries require a different connection to work properly)
             $credentials = $this->getCredentials();
-            $cnx         = self::createLink($credentials);
+            $cnx = self::createLink($credentials);
             if ($this->hasOption('charset')) {
                 $cnx->set_charset($this->getOption('charset'));
             }
@@ -255,26 +263,37 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
         }
 
         $stmt->bind();
-        $promise = MysqliAsync::query($stmt->getRunnableQuery(), $cnx)->then(function ($result) use ($cnx, $stmt) {
-            if (!$result instanceof mysqli_result) {
-                $result = null;
-            }
-            return new Result($cnx, $result);
-        });
 
-        return $promise;
+        $query = $stmt instanceof EmulatedStatement ? $stmt->getRunnableQuery() : $stmt;
+
+        return MysqliAsync::query($query, $cnx)->then(
+            static function ($result) use ($cnx) {
+                if (!$result instanceof mysqli_result) {
+                    $result = null;
+                }
+
+                return new Result($cnx, $result);
+            }
+        );
     }
 
-    private function runStmt(Statement $stmt)
+    private function runStmt(StatementInterface $stmt)
     {
         try {
-            return self::wrapWithErrorHandler(function () use ($stmt) {
-                return $stmt->createResult();
-            });
+            return self::wrapWithErrorHandler(
+                static function () use ($stmt) {
+                    return $stmt->createResult();
+                }
+            );
         } catch (mysqli_sql_exception $e) {
             if (false !== strpos($e->getMessage(), 'No data supplied for parameters in prepared statement')) {
                 throw new ParamBindingException($e->getMessage(), (int) $e->getCode(), $e, $stmt);
-            } elseif (false !== strpos($e->getMessage(), "Number of variables doesn't match number of parameters in prepared statement")) {
+            } elseif (
+                false !== strpos(
+                    $e->getMessage(),
+                    "Number of variables doesn't match number of parameters in prepared statement"
+                )
+            ) {
                 throw new ParamBindingException($e->getMessage(), (int) $e->getCode(), $e, $stmt);
             } else {
                 throw new DBALException($e->getMessage(), (int) $e->getCode(), $e);
@@ -325,32 +344,32 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     public function getDefaultOptions(): array
     {
         return [
-            self::OPT_MAX_RECONNECT_ATTEMPTS      => self::DEFAULT_MAX_RECONNECT_ATTEMPTS,
-            self::OPT_USLEEP_AFTER_FIRST_ATTEMPT  => self::DEFAULT_USLEEP_AFTER_FIRST_ATTEMPT,
-            self::OPT_RESOLVE_NAMED_PARAMS        => false,
+            self::OPT_MAX_RECONNECT_ATTEMPTS => self::DEFAULT_MAX_RECONNECT_ATTEMPTS,
+            self::OPT_USLEEP_AFTER_FIRST_ATTEMPT => self::DEFAULT_USLEEP_AFTER_FIRST_ATTEMPT,
+            self::OPT_RESOLVE_NAMED_PARAMS => false,
             self::OPT_EMULATE_PREPARED_STATEMENTS => false,
-            self::OPT_ENABLE_PARALLEL_QUERIES     => false,
+            self::OPT_ENABLE_PARALLEL_QUERIES => false,
         ];
     }
 
     /**
      * @param CredentialsInterface $credentials
-     * @param bool $resolveNamedParameters
+     * @param array|null $options
      * @return MysqliAdapter
      */
     public static function factory(CredentialsInterface $credentials, array $options = null): self
     {
-        return new static(self::createLink($credentials), $credentials, $options);
+        return new self(self::createLink($credentials), $credentials, $options);
     }
 
     /**
-     * @param mysqli                    $link
+     * @param mysqli $link
      * @param CredentialsInterface|null $credentials
      * @return MysqliAdapter
      */
     public static function createFromLink(mysqli $link, CredentialsInterface $credentials = null): self
     {
-        return new static($link, $credentials);
+        return new self($link, $credentials);
     }
 
     /**
@@ -361,7 +380,13 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
     {
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         try {
-            return new mysqli($credentials->getHostname(), $credentials->getUser(), $credentials->getPassword(), $credentials->getDatabase(), $credentials->getPort());
+            return new mysqli(
+                $credentials->getHostname(),
+                $credentials->getUser(),
+                $credentials->getPassword(),
+                $credentials->getDatabase(),
+                $credentials->getPort()
+            );
         } catch (mysqli_sql_exception $e) {
             throw new AccessDeniedException($e->getMessage(), (int) $e->getCode(), $e);
         }
@@ -373,12 +398,13 @@ class MysqliAdapter implements AdapterInterface, TransactionAdapterInterface, Re
      */
     private static function wrapWithErrorHandler(callable $run)
     {
-        $errorHandler = function ($errno, $errstr) {
+        $errorHandler = static function ($errno, $errstr) {
             throw new mysqli_sql_exception($errstr, $errno);
         };
         set_error_handler($errorHandler, E_WARNING);
         $result = $run();
         restore_error_handler();
+
         return $result;
     }
 }

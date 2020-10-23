@@ -9,9 +9,8 @@ use BenTools\SimpleDBAL\Model\Adapter\PDO\PDOAdapter;
 
 class SimpleDBAL
 {
-
-    const PDO    = 'pdo';
-    const MYSQLI = 'mysqli';
+    public const PDO    = 'pdo';
+    public const MYSQLI = 'mysqli';
 
     /**
      * @param CredentialsInterface $credentials

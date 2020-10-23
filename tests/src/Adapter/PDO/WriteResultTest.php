@@ -2,6 +2,8 @@
 
 namespace BenTools\SimpleDBAL\Tests\Adapter\PDO;
 
+use BenTools\SimpleDBAL\Model\Adapter\PDO\Result;
+
 class WriteResultTest extends ReadResultTest
 {
 
@@ -35,5 +37,14 @@ class WriteResultTest extends ReadResultTest
             $this->sampleData[1]['created_at'],
         ]);
         $this->assertEquals(2, $result->getLastInsertId());
+    }
+
+    public function testInstanciateFromExistingLink()
+    {
+        $this->insertSampleData($this->sampleData);
+        /** @var \PDO $link */
+        $link = self::$cnx->getWrappedConnection();
+        $result = Result::from($link);
+        $this->assertGreaterThan(0, $result->getLastInsertId());
     }
 }

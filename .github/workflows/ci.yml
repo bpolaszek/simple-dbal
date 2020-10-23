@@ -1,0 +1,66 @@
+name: CI Workflow
+
+on: [push, pull_request]
+
+jobs:
+  code-style:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Enable Composer parallel downloads
+      run: composer global require symfony/flex
+
+    - name: Install dependencies
+      if: steps.composer-cache.outputs.cache-hit != 'true'
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Check code style
+      run: composer phpcs:check
+
+    - name: Track avoidable bugs
+      run: composer phpstan:analyze
+
+  tests:
+
+    runs-on: ubuntu-20.04
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+        max-parallel: 10
+        matrix:
+            php:
+                - '7.1'
+                - '7.2'
+                - '7.3'
+                - '7.4'
+            experimental: [ false ]
+            include:
+                -   php: 8.0
+                    experimental: true
+
+    steps:
+    - uses: actions/checkout@v2
+
+    -   name: Shutdown Ubuntu MySQL (SUDO)
+        run: sudo service mysql stop
+
+    -   uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql user: test
+          mysql password: test
+          mysql database: test
+
+    - name: Enable Composer parallel downloads
+      run: composer global require symfony/flex
+
+    - name: Install dependencies
+      if: steps.composer-cache.outputs.cache-hit != 'true'
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Run tests
+      run: composer tests:run

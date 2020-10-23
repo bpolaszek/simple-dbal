@@ -27,7 +27,7 @@ interface ConnectionInterface
      * Executes a read statement asynchronously.
      * The promise MUST return a Result object.
      *
-     * @param $stmt
+     * @param mixed $stmt
      * @param array|null $values
      * @return PromiseInterface
      */

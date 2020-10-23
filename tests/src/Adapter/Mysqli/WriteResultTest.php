@@ -2,6 +2,8 @@
 
 namespace BenTools\SimpleDBAL\Tests\Adapter\Mysqli;
 
+use BenTools\SimpleDBAL\Model\Adapter\Mysqli\Result;
+
 class WriteResultTest extends ReadResultTest
 {
 
@@ -33,5 +35,14 @@ class WriteResultTest extends ReadResultTest
             $this->sampleData[1]['created_at'],
         ]);
         $this->assertEquals(2, $result->getLastInsertId());
+    }
+
+    public function testInstanciateFromExistingLink()
+    {
+        $this->insertSampleData($this->sampleData);
+        /** @var \mysqli $link */
+        $link = self::$cnx->getWrappedConnection();
+        $result = Result::from($link);
+        $this->assertGreaterThan(0, $result->getLastInsertId());
     }
 }

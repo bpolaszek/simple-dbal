@@ -56,7 +56,7 @@ class Statement implements StatementInterface
      * @inheritDoc
      * @return PDOStatement
      */
-    public function getWrappedStatement()
+    public function getWrappedStatement(): PDOStatement
     {
         return $this->stmt;
     }
@@ -102,7 +102,7 @@ class Statement implements StatementInterface
     /**
      * Attempt to convert non-scalar values.
      *
-     * @param $value
+     * @param mixed $value
      * @return string
      */
     protected function toScalar($value)
@@ -125,15 +125,15 @@ class Statement implements StatementInterface
     }
 
     /**
-     * @param $var
+     * @param mixed $value
      * @return int
      */
-    protected function getPdoType($value)
+    protected function getPdoType($value): ?int
     {
         if (!is_scalar($value) && null !== $value) {
             throw new \InvalidArgumentException("Can only cast scalar variables.");
         }
-        switch (strtolower(gettype($value))) :
+        switch (strtolower(gettype($value))) {
             case 'integer':
                 return PDO::PARAM_INT;
             case 'boolean':
@@ -144,7 +144,7 @@ class Statement implements StatementInterface
             case 'string':
             default:
                 return PDO::PARAM_STR;
-        endswitch;
+        }
     }
 
     /**
@@ -181,8 +181,7 @@ class Statement implements StatementInterface
             foreach ($this->values as $value) {
                 $preview = preg_replace("/([\?])/", $escape($value), $preview, 1);
             }
-        } # Case of named placeholders
-        else {
+        } else { # Case of named placeholders
             foreach ($this->values as $key => $value) {
                 if (!in_array($key, $keywords, true)) {
                     $keywords[] = $key;

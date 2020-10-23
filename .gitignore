@@ -1,1 +1,5 @@
 tests/config/settings.yml
+.php_cs.cache
+.phpcs-cache
+composer.lock
+phpunit.xml

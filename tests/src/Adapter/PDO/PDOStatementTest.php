@@ -66,7 +66,7 @@ class PDOStatementTest extends PDOTestCase
     }
 
     /**
-     * @expectedException \BenTools\SimpleDBAL\Model\Exception\ParamBindingException
+     * @expectedException \BenTools\SimpleDBAL\Model\Exception\DBALException
      */
     public function testPreparedStmtWithNamedParametersNotProvided()
     {
@@ -106,7 +106,7 @@ class PDOStatementTest extends PDOTestCase
     }
 
     /**
-     * @expectedException \BenTools\SimpleDBAL\Model\Exception\ParamBindingException
+     * @expectedException \BenTools\SimpleDBAL\Model\Exception\DBALException
      */
     public function testPreparedStmtWithIncrementalParametersNotProvided()
     {

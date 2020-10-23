@@ -1,3 +1,4 @@
+![CI Workflow](https://github.com/bpolaszek/simple-dbal/workflows/CI%20Workflow/badge.svg)
 [![Latest Stable Version](https://poser.pugx.org/bentools/simple-dbal/v/stable)](https://packagist.org/packages/bentools/simple-dbal)
 [![License](https://poser.pugx.org/bentools/simple-dbal/license)](https://packagist.org/packages/bentools/simple-dbal)
 [![Quality Score](https://img.shields.io/scrutinizer/g/bpolaszek/simple-dbal.svg?style=flat-square)](https://scrutinizer-ci.com/g/bpolaszek/simple-dbal)
@@ -63,7 +64,7 @@ For _INSERT_ / _UPDATE_ / _DELETE_ queries, use the following methods:
 Installation
 ------------
 ```
-composer require bentools/simple-dbal
+composer require bentools/simple-dbal:0.7.*
 ```
 
 Tests
@@ -73,7 +74,7 @@ Tests
 ```
 
 Documentation
------
+-------------
 
 [Getting started](doc/01-GettingStarted.md)
 
@@ -84,3 +85,9 @@ Documentation
 [Connection pools](doc/04-ConnectionPools.md)
 
 [Known Issues](doc/05-KnownIssues.md)
+
+
+See also
+--------
+
+[bentools/where](https://github.com/bpolaszek/where) - A fluent, immutable SQL expressions builder.

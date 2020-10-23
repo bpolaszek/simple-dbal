@@ -12,7 +12,6 @@ use mysqli_stmt;
 
 class Statement implements StatementInterface
 {
-
     use StatementTrait;
 
     /**
@@ -130,7 +129,7 @@ class Statement implements StatementInterface
     /**
      * Attempt to convert non-scalar values.
      *
-     * @param $value
+     * @param mixed $value
      * @return string
      */
     protected function toScalar($value)
@@ -192,8 +191,7 @@ class Statement implements StatementInterface
             foreach ($this->values as $value) {
                 $preview = preg_replace("/([\?])/", $escape($value), $preview, 1);
             }
-        } # Case of named placeholders
-        else {
+        } else { # Case of named placeholders
             foreach ($this->values as $key => $value) {
                 if (!in_array($key, $keywords, true)) {
                     $keywords[] = $key;
@@ -215,10 +213,10 @@ class Statement implements StatementInterface
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      * @return string
      */
-    protected function getMysqliType($value)
+    protected function getMysqliType($value): ?string
     {
         if (!is_scalar($value)) {
             throw new \InvalidArgumentException(sprintf("Can only cast scalar variables, %s given.", gettype($value)));
@@ -242,7 +240,7 @@ class Statement implements StatementInterface
         $this->getWrappedStatement()->execute();
         $result = $this->getWrappedStatement()->get_result();
         $mysqli = $this->getConnection()->getWrappedConnection();
-        return !$result instanceof mysqli_result ? new Result($mysqli) : new Result($mysqli, $result, $this->getWrappedStatement());
+        return !$result instanceof mysqli_result ? new Result($mysqli) : new Result($mysqli, $result);
     }
 
     /**

@@ -9,40 +9,23 @@ use mysqli;
 use mysqli_result;
 use mysqli_stmt;
 
-class Result implements IteratorAggregate, ResultInterface
+final class Result implements IteratorAggregate, ResultInterface
 {
     /**
-     * @var mysqli
+     * @var mysqli|null
      */
     private $mysqli;
 
     /**
-     * @var mysqli_stmt
-     */
-    private $stmt;
-
-    /**
-     * @var mysqli_result
+     * @var mysqli_result|null
      */
     private $result;
 
-    private $storage = [];
+    private $frozen = false;
 
-    /**
-     * @var bool
-     */
-    private $storageEnabled = true;
-
-    /**
-     * Result constructor.
-     * @param mysqli        $mysqli
-     * @param mysqli_stmt   $stmt
-     * @param mysqli_result $result
-     */
-    public function __construct(mysqli $mysqli, mysqli_result $result = null, mysqli_stmt $stmt = null)
+    public function __construct(mysqli $mysqli = null, mysqli_result $result = null)
     {
         $this->mysqli = $mysqli;
-        $this->stmt = $stmt;
         $this->result = $result;
     }
 
@@ -51,15 +34,19 @@ class Result implements IteratorAggregate, ResultInterface
      */
     public function getLastInsertId()
     {
+        if (null === $this->mysqli) {
+            throw new DBALException("No \mysqli object provided.");
+        }
+
         return $this->mysqli->insert_id;
     }
 
     /**
      * @inheritDoc
      */
-    public function count()
+    public function count(): int
     {
-        return null === $this->result ? $this->mysqli->affected_rows : $this->result->num_rows;
+        return null === $this->result ? $this->getAffectedRows() : $this->getNumRows();
     }
 
     /**
@@ -68,22 +55,12 @@ class Result implements IteratorAggregate, ResultInterface
     public function asArray(): array
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
-        if (empty($this->storage['array'])) {
-            if ($this->shouldResetResultset()) {
-                $this->resetResultset();
-            }
 
-            $result = $this->result->fetch_all(MYSQLI_ASSOC);
+        $this->freeze();
 
-            if (true === $this->storageEnabled) {
-                $this->storage['array'] = $result;
-            }
-
-            return $result;
-        }
-        return $this->storage['array'];
+        return $this->result->fetch_all(MYSQLI_ASSOC);
     }
 
     /**
@@ -92,26 +69,12 @@ class Result implements IteratorAggregate, ResultInterface
     public function asRow(): ?array
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
-        if (empty($this->storage['row'])) {
-            if (isset($this->storage['array'][0])) {
-                $this->storage['row'] = &$this->storage['array'][0];
-            } else {
-                if ($this->shouldResetResultset()) {
-                    $this->resetResultset();
-                }
 
-                $result = $this->result->fetch_array(MYSQLI_ASSOC) ?: null;
+        $this->freeze();
 
-                if (true === $this->storageEnabled) {
-                    $this->storage['row'] = $result;
-                }
-
-                return $result;
-            }
-        }
-        return $this->storage['row'];
+        return $this->result->fetch_array(MYSQLI_ASSOC) ?: null;
     }
 
     /**
@@ -120,31 +83,18 @@ class Result implements IteratorAggregate, ResultInterface
     public function asList(): array
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
-        if (empty($this->storage['list'])) {
-            if (!empty($this->storage['array'])) {
-                $this->storage['list'] = array_column($this->storage['array'], array_keys($this->storage['array'][0])[0]);
-            } else {
-                if ($this->shouldResetResultset()) {
-                    $this->resetResultset();
-                }
 
-                $generator = function (\mysqli_result $result) {
-                    while ($row = $result->fetch_array(MYSQLI_NUM)) {
-                        yield $row[0];
-                    }
-                };
-                $result = iterator_to_array($generator($this->result));
+        $this->freeze();
 
-                if (true === $this->storageEnabled) {
-                    $this->storage['list'] = $result;
-                }
-
-                return $result;
+        $generator = function (mysqli_result $result) {
+            while (null !== ($row = $result->fetch_array(MYSQLI_NUM))) {
+                yield $row[0];
             }
-        }
-        return $this->storage['list'];
+        };
+
+        return iterator_to_array($generator($this->result));
     }
 
     /**
@@ -153,31 +103,14 @@ class Result implements IteratorAggregate, ResultInterface
     public function asValue()
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
-        if (empty($this->storage['value'])) {
-            if (!empty($this->storage['list'][0])) {
-                $this->storage['value'] = $this->storage['list'][0];
-            } elseif (!empty($this->storage['row'])) {
-                $this->storage['value'] = array_values($this->storage['row'])[0];
-            } elseif (!empty($this->storage['array'])) {
-                $this->storage['value'] = array_values($this->storage['array'][0])[0];
-            } else {
-                if ($this->shouldResetResultset()) {
-                    $this->resetResultset();
-                }
 
-                $row = $this->result->fetch_array(MYSQLI_NUM);
-                $result = $row ? $row[0] : null;
+        $this->freeze();
 
-                if (true === $this->storageEnabled) {
-                    $this->storage['value'] = $result;
-                }
+        $row = $this->result->fetch_array(MYSQLI_NUM);
 
-                return $result;
-            }
-        }
-        return $this->storage['value'];
+        return $row[0] ?? null;
     }
 
     /**
@@ -186,59 +119,55 @@ class Result implements IteratorAggregate, ResultInterface
     public function getIterator()
     {
         if (null === $this->result) {
-            throw new DBALException("No mysqli_result object provided.");
+            throw new DBALException("No \mysqli_result object provided.");
         }
-        if (!empty($this->storage['array'])) {
-            foreach ($this->storage['array'] as $key => $value) {
-                yield $key => $value;
-            }
-        } else {
-            if ($this->shouldResetResultset()) {
-                $this->resetResultset();
-            }
 
-            while ($row = $this->result->fetch_array(MYSQLI_ASSOC)) {
-                if (empty($this->storage['yield'])) {
-                    $this->storage['yield'] = true;
-                }
-                yield $row;
-            }
+        $this->freeze();
+
+        while ($row = $this->result->fetch_array(MYSQLI_ASSOC)) {
+            yield $row;
         }
     }
 
-
-    /**
-     * If asRow(), asList() or asValue() was called earlier, the iterator may be incomplete.
-     * In such case we need to rewind the iterator by executing the statement a second time.
-     * You should avoid to call getIterator() and asRow(), etc. with the same resultset.
-     *
-     * @return bool
-     */
-    private function shouldResetResultset(): bool
+    private function freeze(): void
     {
-        return !empty($this->storage['row']) || !empty($this->storage['value']) || !empty($this->storage['list']) || !empty($this->storage['yield']);
-    }
-
-
-    /**
-     * Reset the resultset.
-     */
-    private function resetResultset()
-    {
-        if (null !== $this->stmt) {
-            $this->stmt->execute();
-            $this->result = $this->stmt->get_result();
+        if (true === $this->frozen) {
+            throw new DBALException("This result is frozen. You have to re-execute this statement.");
         }
+
+        $this->frozen = true;
     }
 
-    /**
-     * @return ResultInterface
-     */
-    public function withoutStorage(): ResultInterface
+    private function getAffectedRows(): int
     {
-        $clone = clone $this;
-        $clone->storage = [];
-        $clone->storageEnabled = false;
-        return $clone;
+        if (null === $this->mysqli) {
+            throw new DBALException("No \mysqli object provided.");
+        }
+
+        return $this->mysqli->affected_rows;
+    }
+
+    private function getNumRows(): int
+    {
+        if (null === $this->result) {
+            throw new DBALException("No \mysqli_result object provided.");
+        }
+
+        return $this->result->num_rows;
+    }
+
+    public static function from(...$arguments): self
+    {
+        $instance = new self();
+        foreach ($arguments as $argument) {
+            if ($argument instanceof mysqli) {
+                $instance->mysqli = $argument;
+            }
+            if ($argument instanceof mysqli_result) {
+                $instance->result = $argument;
+            }
+        }
+
+        return $instance;
     }
 }
